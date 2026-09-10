@@ -287,13 +287,24 @@ const firebaseConfig = {
   .hist-row:last-child{border-bottom:none;}
   .hist-row .hd{color:var(--text-dim);}
 
+  .my-ex-row-full{margin-bottom:10px;}
   .my-ex-row{
     display:flex;align-items:center;justify-content:space-between;
     background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-    border:1px solid var(--border);
-    padding:12px 14px;margin-bottom:8px;border-radius:14px;
+    border:1px solid var(--border);border-bottom:none;
+    padding:12px 14px;border-radius:14px 14px 0 0;
   }
   .my-ex-row span{font-size:14.5px;}
+  .day-assign-row{
+    display:flex;flex-wrap:wrap;gap:5px;
+    background:var(--card);border:1px solid var(--border);border-top:none;
+    padding:8px 10px 10px;border-radius:0 0 14px 14px;
+  }
+  .day-assign-pill{
+    background:var(--fill);border:none;color:var(--text-dim);
+    padding:5px 10px;border-radius:16px;font-size:11px;font-weight:500;cursor:pointer;
+  }
+  .day-assign-pill.on{background:var(--accent);color:#fff;font-weight:600;}
 
   .trend-badge{
     display:inline-flex;align-items:center;gap:5px;
@@ -498,13 +509,17 @@ const firebaseConfig = {
     padding:8px 0 4px;margin-top:2px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;
     min-height:32px;
   }
+  .card-actions-row{
+    display:flex;gap:14px;margin-top:6px;padding-top:8px;border-top:1px solid var(--border);
+  }
   .sub-link{
     display:block;
     background:transparent;border:none;color:var(--text-tertiary);font-size:11.5px;
-    padding:8px 0 4px;margin-top:6px;cursor:pointer;
-    border-top:1px solid var(--border);
+    padding:6px 0;cursor:pointer;
     min-height:32px;
   }
+  .sub-link-danger{color:var(--danger);opacity:0.85;}
+  .add-ex-section{margin:4px 0 10px;}
   .sub-panel{
     margin-top:6px;padding:8px;background:var(--fill);border-radius:10px;
     display:flex;flex-direction:column;gap:4px;
@@ -785,10 +800,14 @@ function attachSync(uid){
       sets = data.sets ? JSON.parse(data.sets) : [];
       myExercises = data.myExercises ? JSON.parse(data.myExercises) : [];
       workoutSessions = data.workoutSessions ? JSON.parse(data.workoutSessions) : [];
+      programOverrides = data.programOverrides ? JSON.parse(data.programOverrides) : {};
+      customExercises = data.customExercises ? JSON.parse(data.customExercises) : {};
     }else{
       sets = [];
       myExercises = [];
       workoutSessions = [];
+      programOverrides = {};
+      customExercises = {};
     }
     render();
     if(activeTab === 'progress'){ renderInsights(); renderProgress(); }
@@ -839,6 +858,20 @@ async function saveWorkoutSessions(){
   }
 }
 
+async function saveProgramOverrides(){
+  if(!currentUser) return;
+  try{
+    await db.collection('users').doc(currentUser.uid).set({
+      programOverrides: JSON.stringify(programOverrides),
+      customExercises: JSON.stringify(customExercises)
+    }, { merge: true });
+    setSyncStatus(true);
+  }catch(e){
+    console.error('Could not save program overrides', e);
+    setSyncStatus(false);
+  }
+}
+
 function fmtDateKey(ts){
   const d = new Date(ts);
   return d.toDateString();
@@ -870,7 +903,7 @@ const EXERCISE_LIBRARY = {
   'single-arm-cable-kickback': { name:'Single-Arm Cable Kickback', primaryMuscle:'Triceps', secondaryMuscles:[], type:'isolation', alternatives:[] },
   'cable-crunch': { name:'Cable Crunch', primaryMuscle:'Abs', secondaryMuscles:[], type:'isolation', alternatives:[] },
   'hanging-leg-raise': { name:'Hanging Leg Raise', primaryMuscle:'Abs', secondaryMuscles:['Hip flexors'], type:'isolation', alternatives:[] },
-  'assisted-pullup': { name:'Assisted Pull-Ups', primaryMuscle:'Lats', secondaryMuscles:['Biceps'], type:'compound', alternatives:[] },
+  'assisted-pullup': { name:'Assisted Pull-Ups', primaryMuscle:'Lats', secondaryMuscles:['Biceps'], type:'compound', alternatives:[], assistance:true },
   'wide-lat-pulldown': { name:'Wide-Grip Lat Pulldown', primaryMuscle:'Lats', secondaryMuscles:['Biceps'], type:'compound', alternatives:[] },
   'vbar-seated-row': { name:'V-Bar Seated Cable Row', primaryMuscle:'Mid back', secondaryMuscles:['Lats','Biceps'], type:'compound', alternatives:[] },
   'chest-supported-tbar-row': { name:'Chest-Supported T-Bar Row', primaryMuscle:'Mid back', secondaryMuscles:['Rear delts'], type:'compound', alternatives:[] },
@@ -906,7 +939,35 @@ const EXERCISE_LIBRARY = {
   'ab-wheel-rollout': { name:'Ab Wheel Rollout', primaryMuscle:'Core (anti-extension)', secondaryMuscles:[], type:'isolation', alternatives:[] }
 };
 
-function exMeta(id){ return EXERCISE_LIBRARY[id] || { name:id, primaryMuscle:'', secondaryMuscles:[], type:'isolation', alternatives:[] }; }
+function exMeta(id){
+  return EXERCISE_LIBRARY[id] || customExercises[id] || { name:id, primaryMuscle:'', secondaryMuscles:[], type:'isolation', alternatives:[] };
+}
+
+function slugifyExerciseName(name){
+  return 'custom-' + name.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+}
+
+function resolveExerciseIdByName(name){
+  // Reuse a built-in library id if the name matches one exactly (case-insensitive) — avoids
+  // creating a duplicate "custom" entry for an exercise that already exists in the library.
+  const lower = name.trim().toLowerCase();
+  const builtIn = Object.keys(EXERCISE_LIBRARY).find(id => EXERCISE_LIBRARY[id].name.toLowerCase() === lower);
+  if(builtIn) return builtIn;
+  const existingCustom = Object.keys(customExercises).find(id => customExercises[id].name.toLowerCase() === lower);
+  if(existingCustom) return existingCustom;
+  return slugifyExerciseName(name);
+}
+
+function getEffectiveProgram(program){
+  // Base program exercises minus anything the user removed, plus anything the user added —
+  // this is what every screen should read instead of PROGRAM_DATA directly, so program
+  // customization actually takes effect everywhere.
+  const overrides = programOverrides[program.name] || { removed:[], added:[] };
+  const removed = overrides.removed || [];
+  const added = overrides.added || [];
+  const base = program.exercises.filter(ex => !removed.includes(ex.id));
+  return base.concat(added);
+}
 
 const PROGRAM_DATA = {
   5: { name:'Push', muscles:['Chest','Shoulders','Triceps','Abs'], exercises:[
@@ -974,12 +1035,15 @@ let activeDayIndex = new Date().getDay();
 let restTimer = { running:false, secondsLeft:0, exerciseName:'', intervalId:null };
 let finishedSummary = null;
 let workoutSessions = [];
+let programOverrides = {};  // { [workoutName]: { removed:[exerciseId,...], added:[{id,name,sets,repMin,repMax,rest,section}] } }
+let customExercises = {};   // { [id]: {name, primaryMuscle, secondaryMuscles, type, alternatives} } — user-created exercises not in the built-in library
 let pendingRir = {};        // exIdx -> selected RIR value (default 2)
 let pendingSetInput = {};   // exIdx -> {weight, reps} — the in-progress set being entered, kept in JS state
                              // so re-renders (RIR change, warm-up toggle, substitution) never lose it
 let pendingWarmup = {};     // exIdx -> true while the next-set row is in "add warm-up" mode
 let substitutions = {};     // exIdx -> substitute exercise id, for today's workout only
 let openSubMenu = null;     // exIdx currently showing the substitute picker, or null
+let showAddExercisePicker = false; // whether the "+ Add exercise" picker is open on today's workout
 let justAdvancedIdx = null; // exIdx whose next set just became active (rest just ended) — brief highlight only
 let startNewAttempt = {};   // workoutName -> true once "Start Another Workout" is explicitly pressed today
 let viewingCompletedId = null; // a persisted session id currently being reviewed read-only, or null
@@ -1078,19 +1142,33 @@ function hypertrophyScore(weight, reps){
   return w * (1 + r/30);
 }
 
+const ASSISTANCE_BASELINE = 150; // comfortably above any real assisted-machine weight, used only for relative scoring
+
+function performanceScore(weight, reps, isAssistance){
+  if(isAssistance){
+    // Less assistance weight = doing more of your own bodyweight = a *better* set, not worse.
+    // Invert by scoring against a fixed baseline so "lower weight" maps to "higher score".
+    const w = Math.max(0, ASSISTANCE_BASELINE - (Number(weight)||0));
+    const r = Math.min(Number(reps)||1, 12);
+    return w * (1 + r/30);
+  }
+  return hypertrophyScore(weight, reps);
+}
+
 function bestPerformance(exerciseName, exerciseId, currentSessionId){
   // BEST = the benchmark from BEFORE this session started. Sets logged in the session currently
   // being trained are deliberately excluded, so BEST stays fixed while you're mid-workout and only
   // updates for the *next* session once this one is finished.
+  const isAssistance = exerciseId && EXERCISE_LIBRARY[exerciseId] && EXERCISE_LIBRARY[exerciseId].assistance;
   const valid = sets.filter(s =>
     !s.isWarmup && Number(s.weight)>0 && Number(s.reps)>0 && s.sessionId!==currentSessionId &&
     (exerciseId ? (s.exerciseId===exerciseId || s.exercise===exerciseName) : s.exercise===exerciseName)
   );
   if(valid.length===0) return null;
   let best = valid[0];
-  let bestScore = hypertrophyScore(best.weight, best.reps);
+  let bestScore = performanceScore(best.weight, best.reps, isAssistance);
   valid.forEach(s=>{
-    const score = hypertrophyScore(s.weight, s.reps);
+    const score = performanceScore(s.weight, s.reps, isAssistance);
     if(score > bestScore){ bestScore = score; best = s; }
   });
   return best;
@@ -1098,15 +1176,17 @@ function bestPerformance(exerciseName, exerciseId, currentSessionId){
 
 function checkAndFlagPR(exerciseName, exerciseId, weight, reps, currentSessionId){
   // A meaningful "performance PR" against the pre-session BEST — weight + reps together (capped),
-  // not just whichever single number happens to be biggest.
+  // not just whichever single number happens to be biggest. For assistance-based exercises
+  // (like Assisted Pull-Ups), less assistance weight counts as the improvement, not more.
   if(!weight || Number(weight)<=0 || !reps || Number(reps)<=0) return false;
+  const isAssistance = exerciseId && EXERCISE_LIBRARY[exerciseId] && EXERCISE_LIBRARY[exerciseId].assistance;
   const priorWorking = sets.filter(s =>
     !s.isWarmup && Number(s.weight)>0 && Number(s.reps)>0 && s.sessionId!==currentSessionId &&
     (exerciseId ? (s.exerciseId===exerciseId || s.exercise===exerciseName) : s.exercise===exerciseName)
   );
   if(priorWorking.length===0) return false;
-  const bestPriorScore = Math.max(...priorWorking.map(s=>hypertrophyScore(s.weight, s.reps)));
-  return hypertrophyScore(weight, reps) > bestPriorScore;
+  const bestPriorScore = Math.max(...priorWorking.map(s=>performanceScore(s.weight, s.reps, isAssistance)));
+  return performanceScore(weight, reps, isAssistance) > bestPriorScore;
 }
 
 function startRestTimer(seconds, exerciseName, exIdx){
@@ -1169,7 +1249,7 @@ function renderTodayDashboard(){
     }else{
       const todayKey = state.todayKey;
       const todaysWorking = sets.filter(s=>s.workoutDay===program.name && fmtDateKey(s.timestamp)===todayKey && s.sessionId===state.sessionId && !s.isWarmup);
-      const targetSets = program.exercises.reduce((a,e)=>a+e.sets,0);
+      const targetSets = getEffectiveProgram(program).reduce((a,e)=>a+e.sets,0);
       const doneSets = todaysWorking.length;
       const pct = Math.min(100, Math.round((doneSets/targetSets)*100));
       const firstTs = todaysWorking.length ? Math.min(...todaysWorking.map(s=>s.timestamp)) : null;
@@ -1251,7 +1331,8 @@ function renderWorkoutCards(){
   let html = '';
   let lastSection = null;
 
-  program.exercises.forEach((ex, exIdx)=>{
+  const effectiveExercises = getEffectiveProgram(program);
+  effectiveExercises.forEach((ex, exIdx)=>{
     if(ex.section && ex.section !== lastSection){
       html += '<div class="section-hdr">'+escapeHtml(ex.section.toUpperCase())+'</div>';
       lastSection = ex.section;
@@ -1345,7 +1426,10 @@ function renderWorkoutCards(){
     }
 
     if(!isSubstituted || true){
-      html += '<button type="button" class="sub-link" data-subtoggle="'+exIdx+'">Substitute</button>';
+      html += '<div class="card-actions-row">'
+        +'<button type="button" class="sub-link" data-subtoggle="'+exIdx+'">Substitute</button>'
+        +'<button type="button" class="sub-link sub-link-danger" data-removeex="'+exIdx+'">Remove</button>'
+      +'</div>';
       if(openSubMenu === exIdx){
         const altIds = EXERCISE_LIBRARY[ex.id] ? EXERCISE_LIBRARY[ex.id].alternatives : [];
         html += '<div class="sub-panel"><div class="sub-panel-hdr">Alternatives</div>';
@@ -1366,6 +1450,24 @@ function renderWorkoutCards(){
 
     html += '</div>';
   });
+
+  html += '<div class="add-ex-section">';
+  if(showAddExercisePicker){
+    const alreadyInToday = new Set(effectiveExercises.map(e=>e.id));
+    const pickable = myExercises.filter(name => !alreadyInToday.has(resolveExerciseIdByName(name)));
+    html += '<div class="sub-panel"><div class="sub-panel-hdr">Add from your exercises</div>';
+    if(pickable.length){
+      pickable.forEach(name=>{
+        html += '<button type="button" class="sub-option" data-addtoday="'+escapeHtml(name)+'">'+escapeHtml(name)+'</button>';
+      });
+    }else{
+      html += '<div class="sub-empty">Nothing left to add — everything in your saved list is already in today\u2019s workout. Add more from the Exercises tab.</div>';
+    }
+    html += '<button type="button" class="sub-close" id="close-add-ex">Close</button></div>';
+  }else{
+    html += '<button type="button" class="add-warmup-link" id="open-add-ex">+ Add exercise</button>';
+  }
+  html += '</div>';
 
   html += '<div class="finish-bar"><button id="finish-workout-btn">Finish workout</button></div>';
   el.innerHTML = html;
@@ -1436,13 +1538,60 @@ function renderWorkoutCards(){
       renderWorkoutCards();
     };
   });
+  el.querySelectorAll('[data-removeex]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const idx = Number(btn.getAttribute('data-removeex'));
+      const ex = effectiveExercises[idx];
+      const meta = exMeta(ex.id);
+      if(!confirm('Remove '+meta.name+' from today\u2019s '+program.name+'? This only affects today \u2014 it stays in your program for next time.')) return;
+
+      if(!programOverrides[program.name]) programOverrides[program.name] = { removed:[], added:[] };
+      const isBaseExercise = program.exercises.some(e=>e.id===ex.id);
+      if(isBaseExercise){
+        programOverrides[program.name].removed.push(ex.id);
+      }else{
+        programOverrides[program.name].added = (programOverrides[program.name].added||[]).filter(a=>a.id!==ex.id);
+      }
+      saveProgramOverrides();
+
+      // Removing an exercise shifts every later card's index, so any not-yet-submitted typing
+      // on other cards can no longer be trusted to line up correctly — safer to clear it than
+      // risk it silently attaching to the wrong exercise.
+      pendingRir = {}; pendingWarmup = {}; substitutions = {}; openSubMenu = null; pendingSetInput = {};
+      renderTodayDashboard();
+      renderWorkoutCards();
+    };
+  });
   const finishBtn = document.getElementById('finish-workout-btn');
   if(finishBtn) finishBtn.onclick = finishWorkout;
+
+  const openAddBtn = document.getElementById('open-add-ex');
+  if(openAddBtn) openAddBtn.onclick = ()=>{ showAddExercisePicker = true; renderWorkoutCards(); };
+  const closeAddBtn = document.getElementById('close-add-ex');
+  if(closeAddBtn) closeAddBtn.onclick = ()=>{ showAddExercisePicker = false; renderWorkoutCards(); };
+  el.querySelectorAll('[data-addtoday]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const name = btn.getAttribute('data-addtoday');
+      const id = resolveExerciseIdByName(name);
+      if(!EXERCISE_LIBRARY[id] && !customExercises[id]){
+        customExercises[id] = { name, primaryMuscle:'', secondaryMuscles:[], type:'isolation', alternatives:[] };
+      }
+      if(!programOverrides[program.name]) programOverrides[program.name] = { removed:[], added:[] };
+      const already = programOverrides[program.name].added.some(a=>a.id===id) || program.exercises.some(e=>e.id===id);
+      if(!already){
+        programOverrides[program.name].added.push({ id, sets:3, repMin:8, repMax:12, rest:90, section:'Added' });
+      }
+      saveProgramOverrides();
+      showAddExercisePicker = false;
+      renderTodayDashboard();
+      renderWorkoutCards();
+    };
+  });
 }
 
 function completeSet(exIdx, isWarmup){
   const program = PROGRAM_DATA[activeDayIndex];
-  const ex = program.exercises[exIdx];
+  const ex = getEffectiveProgram(program)[exIdx];
   const state = getSessionState(program);
   const effectiveId = substitutions[exIdx] || ex.id;
   const meta = exMeta(effectiveId);
@@ -1507,7 +1656,7 @@ function finishWorkout(){
   // Only this session's own sets — never a previously-completed attempt's sets.
   const todaysAll = sets.filter(s=>s.workoutDay===program.name && fmtDateKey(s.timestamp)===todayKey && s.sessionId===sessionId);
   const working = todaysAll.filter(s=>!s.isWarmup);
-  const targetSets = program.exercises.reduce((a,e)=>a+e.sets,0);
+  const targetSets = getEffectiveProgram(program).reduce((a,e)=>a+e.sets,0);
 
   if(working.length===0){
     if(!confirm('No working sets have been logged. Finish anyway?')) return;
@@ -1796,21 +1945,69 @@ function renderLogsTab(){
   }
 }
 
+function isExerciseInDay(dayIndex, exerciseId){
+  const prog = PROGRAM_DATA[dayIndex];
+  if(!prog) return false;
+  return getEffectiveProgram(prog).some(e=>e.id===exerciseId);
+}
+
+function toggleExerciseInDay(dayIndex, name){
+  const prog = PROGRAM_DATA[dayIndex];
+  if(!prog) return;
+  const id = resolveExerciseIdByName(name);
+  if(!EXERCISE_LIBRARY[id] && !customExercises[id]){
+    customExercises[id] = { name, primaryMuscle:'', secondaryMuscles:[], type:'isolation', alternatives:[] };
+  }
+  if(!programOverrides[prog.name]) programOverrides[prog.name] = { removed:[], added:[] };
+  const overrides = programOverrides[prog.name];
+  const inBase = prog.exercises.some(e=>e.id===id);
+  const currentlyIncluded = isExerciseInDay(dayIndex, id);
+
+  if(currentlyIncluded){
+    // Turning it off
+    if(inBase) overrides.removed.push(id);
+    else overrides.added = (overrides.added||[]).filter(a=>a.id!==id);
+  }else{
+    // Turning it on
+    if(inBase) overrides.removed = (overrides.removed||[]).filter(rid=>rid!==id);
+    else overrides.added.push({ id, sets:3, repMin:8, repMax:12, rest:90, section:'Added' });
+  }
+  saveProgramOverrides();
+  renderMyExercises();
+}
+
 function renderMyExercises(){
   const list = document.getElementById('my-exercises-list');
   if(myExercises.length === 0){
-    list.innerHTML = '<div class="empty">No saved exercises yet. Add the ones from your split above so you can tap to log instead of typing.</div>';
+    list.innerHTML = '<div class="empty">No saved exercises yet. Add some above, then assign each one to a day in your split.</div>';
     return;
   }
-  list.innerHTML = myExercises.map(n =>
-    '<div class="my-ex-row"><span>'+escapeHtml(n)+'</span><button class="icon-btn del" data-remove-ex="'+escapeHtml(n)+'" aria-label="Remove">Del</button></div>'
-  ).join('');
+  const dayEntries = Object.keys(PROGRAM_DATA).map(idx=>[Number(idx), PROGRAM_DATA[idx].name]);
+
+  list.innerHTML = myExercises.map(n => {
+    const id = resolveExerciseIdByName(n);
+    const pills = dayEntries.map(([dayIdx,dayName])=>
+      '<button class="day-assign-pill'+(isExerciseInDay(dayIdx,id)?' on':'')+'" data-assign="'+dayIdx+':'+escapeHtml(n)+'">'+escapeHtml(dayName)+'</button>'
+    ).join('');
+    return '<div class="my-ex-row-full">'
+      +'<div class="my-ex-row"><span>'+escapeHtml(n)+'</span><button class="icon-btn del" data-remove-ex="'+escapeHtml(n)+'" aria-label="Remove">Del</button></div>'
+      +'<div class="day-assign-row">'+pills+'</div>'
+    +'</div>';
+  }).join('');
+
   list.querySelectorAll('[data-remove-ex]').forEach(btn=>{
     btn.onclick = () => {
       myExercises = myExercises.filter(n => n !== btn.getAttribute('data-remove-ex'));
       saveExercises();
       renderMyExercises();
       render();
+    };
+  });
+  list.querySelectorAll('[data-assign]').forEach(btn=>{
+    btn.onclick = () => {
+      const [dayIdx, name] = btn.getAttribute('data-assign').split(':');
+      toggleExerciseInDay(Number(dayIdx), name);
+      if(activeDayIndex === Number(dayIdx)){ renderTodayDashboard(); renderWorkoutCards(); }
     };
   });
 }
@@ -1901,10 +2098,10 @@ function renderInsights(){
   +'</div>';
 }
 
-function trendBadge(sessions){
+function trendBadge(sessions, isAssistance){
   if(sessions.length < 2) return '<span class="trend-badge trend-flat">— No trend yet</span>';
-  const last = e1rm(sessions[sessions.length-1].top.weight, sessions[sessions.length-1].top.reps);
-  const prev = e1rm(sessions[sessions.length-2].top.weight, sessions[sessions.length-2].top.reps);
+  const last = performanceScore(sessions[sessions.length-1].top.weight, sessions[sessions.length-1].top.reps, isAssistance);
+  const prev = performanceScore(sessions[sessions.length-2].top.weight, sessions[sessions.length-2].top.reps, isAssistance);
   const diff = last - prev;
   const pct = prev ? (diff/prev*100) : 0;
   if(Math.abs(pct) < 1) return '<span class="trend-badge trend-flat">→ Holding steady</span>';
@@ -1938,22 +2135,28 @@ function renderProgress(){
     if(!bySession[key]) bySession[key] = { timestamp:s.timestamp, top:s, sets:[] };
     bySession[key].sets.push(s);
     if(s.timestamp < bySession[key].timestamp) bySession[key].timestamp = s.timestamp;
-    if(e1rm(s.weight, s.reps) > e1rm(bySession[key].top.weight, bySession[key].top.reps)) bySession[key].top = s;
+    const isAssist = s.exerciseId && EXERCISE_LIBRARY[s.exerciseId] && EXERCISE_LIBRARY[s.exerciseId].assistance;
+    if(performanceScore(s.weight, s.reps, isAssist) > performanceScore(bySession[key].top.weight, bySession[key].top.reps, isAssist)) bySession[key].top = s;
   });
   const sessions = Object.values(bySession).sort((a,b)=>a.timestamp-b.timestamp);
-  const bestE1rm = Math.max(...sessions.map(d=>e1rm(d.top.weight, d.top.reps)));
+  const isAssistanceEx = sessions.length && sessions[0].top.exerciseId && EXERCISE_LIBRARY[sessions[0].top.exerciseId] && EXERCISE_LIBRARY[sessions[0].top.exerciseId].assistance;
+  const bestScoreSet = sessions.reduce((best,d)=> performanceScore(d.top.weight,d.top.reps,isAssistanceEx) > performanceScore(best.top.weight,best.top.reps,isAssistanceEx) ? d : best, sessions[0]);
   const unitLabel = sessions[0].top.unit || 'kg';
 
   let html = '<div class="chart-card">';
   html += '<h3>'+escapeHtml(selectedEx)+'</h3>';
-  html += '<div class="chart-meta">'+sessions.length+' session'+(sessions.length===1?'':'s')+' logged &middot; best est. 1RM <span class="pr-badge">'+Math.round(bestE1rm)+unitLabel+'</span></div>';
-  html += '<div style="margin-bottom:8px;">'+trendBadge(sessions)+'</div>';
+  html += '<div class="chart-meta">'+sessions.length+' session'+(sessions.length===1?'':'s')+' logged'
+    +(isAssistanceEx
+      ? ' &middot; least assistance <span class="pr-badge">'+bestScoreSet.top.weight+unitLabel+'</span>'
+      : ' &middot; best est. 1RM <span class="pr-badge">'+Math.round(e1rm(bestScoreSet.top.weight,bestScoreSet.top.reps))+unitLabel+'</span>')
+    +'</div>';
+  html += '<div style="margin-bottom:8px;">'+trendBadge(sessions, isAssistanceEx)+'</div>';
   html += '<div class="metric-toggle">'
-    +'<button data-metric="e1rm" class="'+(chartMetric==='e1rm'?'on':'')+'">Est. 1RM</button>'
-    +'<button data-metric="weight" class="'+(chartMetric==='weight'?'on':'')+'">Top weight</button>'
+    +'<button data-metric="e1rm" class="'+(chartMetric==='e1rm'?'on':'')+'">'+(isAssistanceEx?'Performance':'Est. 1RM')+'</button>'
+    +'<button data-metric="weight" class="'+(chartMetric==='weight'?'on':'')+'">'+(isAssistanceEx?'Assistance':'Top weight')+'</button>'
     +'<button data-metric="volume" class="'+(chartMetric==='volume'?'on':'')+'">Session volume</button>'
     +'</div>';
-  html += drawChart(sessions, chartMetric, unitLabel);
+  html += drawChart(sessions, chartMetric, unitLabel, isAssistanceEx);
   html += '</div>';
 
   html += '<div class="chart-card"><h3 style="font-size:14px;margin-bottom:8px;">Session history</h3>';
@@ -1970,23 +2173,23 @@ function renderProgress(){
   });
 }
 
-function metricValue(day, metric){
-  if(metric === 'e1rm') return e1rm(day.top.weight, day.top.reps);
+function metricValue(day, metric, isAssistance){
+  if(metric === 'e1rm') return isAssistance ? performanceScore(day.top.weight, day.top.reps, true) : e1rm(day.top.weight, day.top.reps);
   if(metric === 'weight') return Number(day.top.weight)||0;
   if(metric === 'volume') return day.sets.reduce((a,s)=>a+(Number(s.weight)||0)*Number(s.reps),0);
   return 0;
 }
 
-function drawChart(sessions, metric, unitLabel){
+function drawChart(sessions, metric, unitLabel, isAssistance){
   const W = 460, H = 150, pad = 26;
-  const values = sessions.map(d=>metricValue(d, metric));
+  const values = sessions.map(d=>metricValue(d, metric, isAssistance));
   const min = Math.min(...values, 0), max = Math.max(...values);
   const range = (max - min) || 1;
   const stepX = sessions.length > 1 ? (W - pad*2) / (sessions.length - 1) : 0;
 
   const points = sessions.map((d,i)=>{
     const x = sessions.length > 1 ? pad + i*stepX : W/2;
-    const v = metricValue(d, metric);
+    const v = metricValue(d, metric, isAssistance);
     const y = H - pad - ((v - min) / range) * (H - pad*2);
     return {x,y,v,d};
   });
