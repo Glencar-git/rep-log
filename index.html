@@ -1349,7 +1349,7 @@ const firebaseConfig = {
       </div>
       <div class="meal-edit-note" style="margin:10px 0 16px;">This is just a starting point — every workout stays fully editable afterward, including adding or removing entire sessions.</div>
       <button class="add-btn" id="onboard-training-continue">Continue</button>
-      <button class="auth-toggle" id="onboard-training-skip">Use the standard 5-day split instead</button>
+      <button class="auth-toggle" id="onboard-training-skip">Skip — start with an empty routine</button>
     </div>
 
     <div id="onboard-step-nutrition" style="display:none;">
@@ -1364,6 +1364,8 @@ const firebaseConfig = {
     </div>
   </div>
 </div>
+
+<div id="account-loading" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:var(--bg);color:var(--text-tertiary);font-family:var(--body);">Loading your data&hellip;</div>
 
 <div class="wrap" id="app-wrap" style="display:none;">
   <div class="hdr">
@@ -1532,6 +1534,9 @@ let unsubscribeSnapshot = null;
 let isCreatingAccount = false;
 let justCreatedAccount = false;
 let suppressNextRemoteSave = false;
+let dataReady = false; // true once the current UID's first Firestore snapshot has resolved — gates
+                        // which screen is shown so a previous account's data can never flash on
+                        // screen while the new account's real data is still loading.
 
 document.getElementById('today-label').textContent = new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
 
@@ -1685,20 +1690,27 @@ auth.onAuthStateChanged(user => {
   currentUser = user;
   if(user){
     document.getElementById('auth-gate').style.display = 'none';
+    // Reset every in-memory data variable immediately, before the new UID's Firestore snapshot has
+    // even been requested. Without this, whatever was left over from a previous account signed in
+    // during this same browser tab session could render for a moment (or, if that previous state
+    // happened to be blank, a moment of the wrong account's cached values) while the real data for
+    // this UID is still loading. Signing out already hides app-wrap, so this mainly matters for the
+    // sign-out-then-sign-in-as-someone-else flow in one tab — but it costs nothing to always do it.
+    sets = []; myExercises = []; workoutSessions = []; programOverrides = {}; customExercises = {};
+    foodEntries = []; savedMeals = []; waterEntries = []; stepsEntries = []; supplements = [];
+    supplementLogs = []; weightEntries = []; userRoutine = null; archivedRoutines = [];
+    dailyGoals = { calories:2200, protein:150, carbs:250, fat:70, water:3000, steps:10000 };
+    userProfile = { displayName:'', dob:'', heightCm:null, units:'metric', primaryGoal:'', activityLevel:'' };
+    dataReady = false;
+    document.getElementById('app-wrap').style.display = 'none';
+    document.getElementById('onboarding-gate').style.display = 'none';
+    document.getElementById('account-loading').style.display = 'flex';
     attachSync(user.uid);
-    if(justCreatedAccount){
-      document.getElementById('app-wrap').style.display = 'none';
-      document.getElementById('onboarding-gate').style.display = 'flex';
-      document.getElementById('onboard-step-training').style.display = 'block';
-      document.getElementById('onboard-step-nutrition').style.display = 'none';
-    }else{
-      document.getElementById('app-wrap').style.display = 'block';
-      document.getElementById('onboarding-gate').style.display = 'none';
-    }
   }else{
     document.getElementById('auth-gate').style.display = 'flex';
     document.getElementById('app-wrap').style.display = 'none';
     document.getElementById('onboarding-gate').style.display = 'none';
+    document.getElementById('account-loading').style.display = 'none';
     if(unsubscribeSnapshot){ unsubscribeSnapshot(); unsubscribeSnapshot = null; }
   }
 });
@@ -1737,7 +1749,9 @@ document.getElementById('onboard-training-continue').onclick = ()=>{
   document.getElementById('onboard-step-nutrition').style.display = 'block';
 };
 document.getElementById('onboard-training-skip').onclick = ()=>{
-  userRoutine = migrateToUserRoutine();
+  // Deliberately an EMPTY routine, never another account's real program — a skip must never seed
+  // a new user with anyone's actual training content. They can build it later from My Program.
+  userRoutine = { id:'routine_'+Date.now(), name:'My Routine', workouts:[] };
   archivedRoutines = [];
   saveRoutine();
   activeDayIndex = new Date().getDay();
@@ -1800,9 +1814,24 @@ function attachSync(uid){
         userRoutine = JSON.parse(data.userRoutine);
         archivedRoutines = data.archivedRoutines ? JSON.parse(data.archivedRoutines) : [];
       }else{
-        userRoutine = migrateToUserRoutine();
-        archivedRoutines = [];
-        saveRoutine();
+        // No routine saved under this UID. This branch used to unconditionally hand out the
+        // hard-coded 5-day split (migrateToUserRoutine(), built from this developer's own personal
+        // PROGRAM_DATA) to ANY account that reached it — which is exactly how a brand-new account
+        // immediately showed the existing account's real routine. Only treat this as "an account
+        // that was using the app before the routine editor existed" — the one legitimate case for
+        // that migration — when there is actual historical training data proving that. No history
+        // means a genuinely new user, who gets no routine at all until onboarding or the in-app
+        // routine builder creates one because they asked for it.
+        const priorSets = data.sets ? JSON.parse(data.sets) : [];
+        const priorSessions = data.workoutSessions ? JSON.parse(data.workoutSessions) : [];
+        if(priorSets.length || priorSessions.length){
+          userRoutine = migrateToUserRoutine();
+          archivedRoutines = [];
+          saveRoutine();
+        }else{
+          userRoutine = null;
+          archivedRoutines = [];
+        }
       }
     }else{
       sets = [];
@@ -1824,6 +1853,22 @@ function attachSync(uid){
       archivedRoutines = [];
     }
     applyTheme(themeMode);
+    // Reveal the correct screen only once this UID's actual data has arrived — never before, so a
+    // previous account's stale in-memory state (or an empty flash of the wrong screen) can never be
+    // shown while this account's real data is still loading.
+    if(!dataReady){
+      dataReady = true;
+      document.getElementById('account-loading').style.display = 'none';
+      if(justCreatedAccount){
+        document.getElementById('app-wrap').style.display = 'none';
+        document.getElementById('onboarding-gate').style.display = 'flex';
+        document.getElementById('onboard-step-training').style.display = 'block';
+        document.getElementById('onboard-step-nutrition').style.display = 'none';
+      }else{
+        document.getElementById('app-wrap').style.display = 'block';
+        document.getElementById('onboarding-gate').style.display = 'none';
+      }
+    }
     render();
     if(activeTab === 'progress'){ renderInsights(); renderProgress(); }
     if(activeTab === 'logs'){ renderLogsTab(); }
@@ -2458,7 +2503,12 @@ function createRoutineFromTemplate(name, frequency, templateName){
 function getActiveProgramData(){
   // Shaped exactly like the old hardcoded PROGRAM_DATA (keyed by weekday 0-6, or a synthetic key
   // for unscheduled/custom workouts) but driven by the user's editable routine.
-  if(!userRoutine || !userRoutine.workouts.length) return PROGRAM_DATA;
+  // IMPORTANT: this must NEVER fall back to the hardcoded PROGRAM_DATA sample split when a user has
+  // no routine of their own — that silent fallback was the actual root cause of one account's real
+  // program appearing immediately for every other account, new or not. No routine means no program,
+  // full stop; every call site below already handles an empty/missing day correctly (same as a rest
+  // day under a normal schedule), so this is safe everywhere it's used.
+  if(!userRoutine || !userRoutine.workouts.length) return {};
   const out = {};
   userRoutine.workouts.forEach(w=>{
     const base = (w.baseDayIndex!=null && PROGRAM_DATA[w.baseDayIndex]) ? PROGRAM_DATA[w.baseDayIndex].exercises : [];
@@ -4847,7 +4897,11 @@ function renderExerciseDetailPanel(){
   if(!selectedLibraryExerciseId || !allEntries[selectedLibraryExerciseId]){
     // No selection — show the My Program overview instead
     let html = '<div class="today-card"><div class="today-top"><div><div class="today-eyebrow">My Program</div></div></div>';
-    Object.keys(getActiveProgramData()).map(Number).forEach(idx=>{
+    const activeProgramKeys = Object.keys(getActiveProgramData());
+    if(!activeProgramKeys.length){
+      html += '<div class="detail-empty">No workouts in your routine yet. Add one from Profile &amp; Goals or the onboarding setup to see it here.</div>';
+    }
+    activeProgramKeys.map(Number).forEach(idx=>{
       const prog = getActiveProgramData()[idx];
       const exList = getEffectiveProgram(prog);
       html += '<div class="myprogram-day">'
