@@ -1345,7 +1345,7 @@ const firebaseConfig = {
         <button type="button" class="day-pill" data-obtemplate="Full Body">Full Body</button>
         <button type="button" class="day-pill" data-obtemplate="Upper / Lower">Upper / Lower</button>
         <button type="button" class="day-pill" data-obtemplate="Push Pull Legs">Push Pull Legs</button>
-        <button type="button" class="day-pill" data-obtemplate="Build My Own">Build My Own</button>
+        <button type="button" class="day-pill" data-obtemplate="Start Empty">Start Empty</button>
       </div>
       <div class="meal-edit-note" style="margin:10px 0 16px;">This is just a starting point — every workout stays fully editable afterward, including adding or removing entire sessions.</div>
       <button class="add-btn" id="onboard-training-continue">Continue</button>
@@ -2487,17 +2487,25 @@ const ROUTINE_TEMPLATES = {
   'Full Body': (n)=>Array.from({length:n},(_,i)=>({name:'Full Body '+String.fromCharCode(65+i), muscles:['Full body']})),
   'Upper / Lower': (n)=>Array.from({length:n},(_,i)=>({name:(i%2===0?'Upper ':'Lower ')+String.fromCharCode(65+Math.floor(i/2)), muscles:i%2===0?['Chest','Back','Shoulders','Arms']:['Quads','Hamstrings','Glutes','Calves']})),
   'Push Pull Legs': (n)=>Array.from({length:n},(_,i)=>{ const names=['Push','Pull','Legs']; const base=names[i%3]; const cycle=Math.floor(i/3); return {name: cycle>0 ? base+' '+String.fromCharCode(65+cycle) : base, muscles: base==='Push'?['Chest','Shoulders','Triceps']:base==='Pull'?['Back','Biceps']:['Quads','Hamstrings','Glutes']}; }),
-  'Build My Own': (n)=>Array.from({length:n},(_,i)=>({name:'Workout '+(i+1), muscles:[]}))
+  'Start Empty': (n)=>Array.from({length:n},(_,i)=>({name:'Workout '+(i+1), muscles:[]}))
 };
 
 function createRoutineFromTemplate(name, frequency, templateName){
-  const builder = ROUTINE_TEMPLATES[templateName] || ROUTINE_TEMPLATES['Build My Own'];
+  const builder = ROUTINE_TEMPLATES[templateName] || ROUTINE_TEMPLATES['Start Empty'];
   const specs = builder(frequency);
   const workouts = specs.map((s,i)=>({
     id: 'wk_'+Date.now()+'_'+i+'_'+Math.floor(Math.random()*1000),
     name: s.name, scheduledDay: null, muscles: s.muscles, baseDayIndex: null
   }));
   return { id:'routine_'+Date.now(), name: name||'My Routine', workouts };
+}
+
+function hasAnyRoutine(){
+  // The one place that answers "does this account have a routine at all" — used to tell a
+  // genuinely empty account (STATE B: needs onboarding) apart from an account that has a routine
+  // but simply has nothing scheduled today (STATE A: a real rest day). Never infer the former from
+  // the latter's absence of a today-workout.
+  return !!(userRoutine && userRoutine.workouts && userRoutine.workouts.length);
 }
 
 function getActiveProgramData(){
@@ -2998,7 +3006,9 @@ function wireRoutineBuilderEvents(){
     if(!name){ alert('Enter a routine name.'); return; }
     if(!freq || freq<1){ alert('Choose how many workouts.'); return; }
     if(!selectedTemplate){ alert('Choose a starting structure.'); return; }
-    archivedRoutines.push(userRoutine);
+    // Only archive a routine that actually exists — a zero-routine account creating its first
+    // routine must not end up with a phantom null entry in archivedRoutines.
+    if(userRoutine) archivedRoutines.push(userRoutine);
     userRoutine = createRoutineFromTemplate(name, freq, selectedTemplate);
     saveRoutine();
     showCreateRoutine = false;
@@ -3097,7 +3107,18 @@ function wireRoutineBuilderEvents(){
 
 function renderRoutineHeader(){
   const el = document.getElementById('routine-header');
-  if(!el || !userRoutine) return;
+  if(!el) return;
+
+  if(!hasAnyRoutine()){
+    // Zero-routine account — this permanent header area becomes the always-available way back into
+    // routine creation, rather than disappearing (a hidden header reads as broken, not empty).
+    el.innerHTML = '<div class="today-card routine-header-card">'
+      + '<div class="today-top"><div><div class="today-eyebrow">My Routine</div><div class="today-title" style="font-size:19px;">No routine yet</div></div>'
+      + '<button class="add-btn" id="header-create-routine-btn" style="padding:8px 16px;">+ Create Routine</button>'
+    + '</div></div>';
+    document.getElementById('header-create-routine-btn').onclick = ()=>{ showRoutineBuilder = true; showCreateRoutine = true; renderRoutineBuilder(); };
+    return;
+  }
 
   let html = '<div class="today-card routine-header-card">';
   html += '<div class="today-top"><div><div class="today-eyebrow">My Routine</div><div class="today-title" style="font-size:19px;">'+escapeHtml(userRoutine.name)+'</div>'
@@ -3157,8 +3178,37 @@ function renderRoutineHeader(){
 
 function renderTodayDashboard(){
   renderRoutineHeader();
-  renderLiveGreeting();
   const el = document.getElementById('today-dashboard');
+
+  if(!hasAnyRoutine()){
+    // STATE B — no routine at all. This is NOT a rest day (that's STATE A: a routine exists but
+    // nothing is scheduled today) and must not be presented as one, since "rest day" implies a
+    // schedule this account doesn't have yet.
+    document.getElementById('live-greeting').innerHTML = '';
+    el.innerHTML = '<div class="today-card">'
+      + '<div class="today-eyebrow">Welcome to MYORYQ</div>'
+      + '<div class="today-title" style="font-size:20px;margin:2px 0 8px;">Start your training plan</div>'
+      + '<div class="today-muscles" style="white-space:normal;line-height:1.5;margin-bottom:16px;">Your routine is empty. Create one to get scheduled workouts, progression tracking, performance analytics and training history.</div>'
+      + '<div class="row" style="gap:8px;">'
+        + '<button type="button" class="add-btn" id="empty-create-routine-btn" style="flex:1;">+ Create Routine</button>'
+        + '<button type="button" class="finish-bar-btn-secondary" id="empty-browse-templates-btn" style="flex:1;">Browse Templates</button>'
+      + '</div>'
+      + '<button type="button" class="sub-link" id="empty-quicklog-btn" style="margin-top:14px;">I just want to log an exercise</button>'
+    + '</div>';
+    const openCreate = ()=>{ showRoutineBuilder = true; showCreateRoutine = true; renderRoutineBuilder(); };
+    document.getElementById('empty-create-routine-btn').onclick = openCreate;
+    // "Browse Templates" opens the exact same reused Create Routine panel — it already presents the
+    // templates as part of the same flow, so a second, separate template browser would just be the
+    // same picker built twice.
+    document.getElementById('empty-browse-templates-btn').onclick = openCreate;
+    document.getElementById('empty-quicklog-btn').onclick = ()=>{
+      const details = document.querySelector('.extra-log');
+      if(details){ details.open = true; details.scrollIntoView({behavior:'smooth', block:'start'}); }
+    };
+    return;
+  }
+
+  renderLiveGreeting();
   const activeProgramData = getActiveProgramData();
   const program = activeProgramData[activeDayIndex];
   const dayPills = Object.keys(activeProgramData).map(idx=>{
