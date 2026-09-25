@@ -6,12 +6,12 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#16171A">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Rep Log">
+<meta name="apple-mobile-web-app-title" content="MYORYQ">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>Rep Log</title>
+<title>MYORYQ &mdash; Progress, quantified.</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
@@ -80,8 +80,14 @@ const firebaseConfig = {
     --success:#39FF88;
     --warning:#FF9F0A;
   }
-  body[data-theme="goated"] .today-title, body[data-theme="goated"] .hdr h1{
+  body[data-theme="goated"] .today-title{
     background:linear-gradient(90deg, #FFD60A, #FF6EC7, #A855F7);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  /* MYORYQ wordmark: a restrained two-stop gold→magenta treatment (not a rainbow across
+     every letter) — the brand's own gradient, used wherever the wordmark appears in Goated. */
+  body[data-theme="goated"] .brand-wordmark{
+    background:linear-gradient(90deg, #FFD60A 35%, #E838C4 100%);
     -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -124,22 +130,44 @@ const firebaseConfig = {
     backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
     border-bottom:1px solid var(--border);
     padding:10px 16px;margin:0 -16px 14px;
+    box-shadow:0 1px 0 rgba(255,255,255,0.04);
   }
+  body[data-theme="light"] .hdr{background:rgba(242,242,247,0.78);}
+  body[data-theme="goated"] .hdr{background:rgba(13,2,23,0.78);border-bottom-color:rgba(168,85,247,0.25);}
+  .hdr-brand{display:flex;align-items:center;gap:9px;}
   .hdr h1{
     font-family:var(--display);
-    font-weight:700;
-    letter-spacing:-0.01em;
-    font-size:20px;
+    font-weight:800;
+    letter-spacing:-0.02em;
+    font-size:19px;
     margin:0;
     white-space:nowrap;
   }
+  /* ---- MYORYQ brand mark: an ascending/descending bar monogram that traces an "M" silhouette
+     via its bar heights (short-tall-medium-tall-short) — doubles as a progression/analytics motif.
+     currentColor lets the same markup work everywhere; the container supplies the color/gradient. ---- */
+  /* ---- MYORYQ brand mark: fixed deep-purple/black + gold identity, the same everywhere
+     regardless of the active app theme (Dark/Light/Goated) — this is the app's icon, not a
+     theme-reactive UI element, exactly like a real product's icon never changes color with
+     the user's chosen theme. The wordmark text next to it still adapts per theme below. ---- */
+  .brand-mark{
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+    border-radius:9px;overflow:hidden;
+    box-shadow:0 4px 14px rgba(255,214,10,0.18), 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .brand-mark svg{display:block;width:100%;height:100%;}
+  .brand-mark-sm{width:26px;height:26px;border-radius:8px;}
+  .brand-mark-lg{width:64px;height:64px;border-radius:17px;margin:0 auto 16px;}
+  .brand-wordmark{
+    font-family:var(--display);font-weight:800;letter-spacing:-0.02em;
+  }
   .trial-badge{
     font-family:var(--body);
-    font-size:9px;font-weight:700;letter-spacing:0.06em;
+    font-size:8.5px;font-weight:600;letter-spacing:0.07em;
     color:var(--text-tertiary);
     background:var(--fill);
-    padding:2px 6px;border-radius:6px;
-    vertical-align:middle;margin-left:2px;
+    padding:2px 5px;border-radius:5px;
+    vertical-align:middle;margin-left:3px;opacity:0.75;
     -webkit-text-fill-color:var(--text-tertiary); /* stays neutral even under the Goated gradient title */
   }
   .hdr-meta{display:flex;align-items:center;gap:10px;}
@@ -226,19 +254,26 @@ const firebaseConfig = {
   }
   input::placeholder{color:var(--text-tertiary);}
   .add-btn{
-    background:var(--accent);
+    background:linear-gradient(135deg, var(--accent), #0968D6);
     color:#fff;
     border:none;
-    font-weight:600;
+    font-weight:650;
     font-size:17px;
     padding:13px;
     cursor:pointer;
     width:100%;
     border-radius:13px;
     font-family:var(--body);
-    transition:transform .15s ease, opacity .15s ease;
+    box-shadow:0 4px 14px var(--accent-dim);
+    transition:transform .15s ease, opacity .15s ease, box-shadow .2s ease;
   }
+  .add-btn:hover{box-shadow:0 6px 20px var(--accent-dim);}
   .add-btn:active{transform:scale(0.97);opacity:0.85;}
+  body[data-theme="goated"] .add-btn{
+    background:linear-gradient(135deg, #FFD60A, #FF9500);color:#1A0B2E;
+    box-shadow:0 4px 14px rgba(255,214,10,0.3);
+  }
+  body[data-theme="goated"] .add-btn:hover{box-shadow:0 6px 22px rgba(255,214,10,0.4);}
 
   .day{margin-bottom:24px;}
   .day-hdr{
@@ -308,9 +343,10 @@ const firebaseConfig = {
     position:absolute;top:3px;left:3px;
     width:calc(20% - 1.2px);height:calc(100% - 6px);
     background:var(--card-hi);border-radius:10px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.35);
-    transition:transform .35s cubic-bezier(.22,1,.36,1);
+    box-shadow:0 2px 8px rgba(0,0,0,0.35), 0 0 0 1px var(--accent-dim) inset;
+    transition:transform .35s cubic-bezier(.22,1,.36,1), box-shadow .3s ease;
   }
+  body[data-theme="goated"] .tabs-thumb{box-shadow:0 2px 8px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,214,10,0.25) inset;}
   .tabs button{
     flex:1;position:relative;z-index:1;background:transparent;border:none;color:var(--text-dim);
     font-family:var(--body);font-weight:600;
@@ -336,6 +372,11 @@ const firebaseConfig = {
     box-shadow:0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px rgba(0,0,0,0.3);
     position:relative;
   }
+  .chart-card::after{
+    content:'';position:absolute;top:0;left:14px;right:14px;height:1px;
+    background:linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+  }
+  body[data-theme="goated"] .chart-card::after{background:linear-gradient(90deg, transparent, rgba(255,214,10,0.35), transparent);}
   .chart-card h3{
     font-family:var(--display);font-weight:650;
     margin:0 0 4px;font-size:19px;letter-spacing:-0.01em;
@@ -515,11 +556,9 @@ const firebaseConfig = {
     padding:20px;background:var(--bg);
   }
   .auth-icon{
-    width:64px;height:64px;border-radius:16px;
-    background:linear-gradient(160deg, var(--accent), #0050b3);
+    width:64px;height:64px;border-radius:17px;
     display:flex;align-items:center;justify-content:center;
     margin:0 auto 16px;
-    box-shadow:0 8px 20px rgba(10,132,255,0.35);
   }
   .auth-card{
     background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -535,7 +574,7 @@ const firebaseConfig = {
   }
   .auth-icon{position:relative;z-index:1;}
   @media (prefers-reduced-motion: no-preference){
-    @keyframes authIconGlow{ 0%{filter:drop-shadow(0 0 0 var(--accent-dim));} 100%{filter:drop-shadow(0 0 14px var(--accent-dim));} }
+    @keyframes authIconGlow{ 0%{filter:drop-shadow(0 0 0 rgba(255,214,10,0.35));} 100%{filter:drop-shadow(0 0 14px rgba(255,214,10,0.35));} }
     .auth-icon{ animation:authIconGlow 1.2s ease forwards; }
   }
   .auth-card h1{
@@ -559,6 +598,39 @@ const firebaseConfig = {
     min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);
   }
   #onboarding-gate p{color:var(--text-dim);font-size:13.5px;margin:8px 0 18px;text-align:left;}
+  #profile-panel{
+    position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;padding:20px;
+    animation:viewFadeUp 0.18s ease;
+  }
+  #profile-panel .profile-panel-inner{max-width:520px;margin:0 auto;padding-bottom:40px;}
+  .profile-panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .profile-panel-hdr h2{font-size:20px;font-weight:700;letter-spacing:-0.01em;}
+  .profile-hero-row{display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
+  .profile-avatar-ring{
+    flex:0 0 auto;width:52px;height:52px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-weight:800;font-size:20px;color:#fff;
+    background:linear-gradient(160deg, var(--accent), #0050b3);
+    box-shadow:0 4px 14px var(--accent-dim);
+  }
+  body[data-theme="goated"] .profile-avatar-ring{background:linear-gradient(160deg, #FFD60A, #A855F7);box-shadow:0 4px 14px rgba(255,214,10,0.3);}
+  .profile-hero-name{font-size:22px;font-weight:800;letter-spacing:-0.01em;}
+  .profile-hero-sub{font-size:12px;color:var(--text-dim);margin-top:1px;}
+  .profile-stat-row{display:flex;gap:18px;margin:10px 0 14px;flex-wrap:wrap;}
+  .profile-stat{display:flex;flex-direction:column;}
+  .profile-stat-value{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .profile-stat-label{font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;}
+  .profile-goal-pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .goal-target-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13.5px;border-bottom:1px solid var(--border);}
+  .goal-target-row:last-child{border-bottom:none;}
+  .goal-target-row span:last-child{font-weight:600;font-variant-numeric:tabular-nums;}
+  .weight-entry-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .weight-entry-row:last-child{border-bottom:none;}
+  .weight-entry-actions{display:flex;gap:4px;}
+  .weight-entry-actions button{background:var(--fill);border:none;color:var(--text-dim);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:12px;}
+  .weight-delta-up{color:var(--warning);}
+  .weight-delta-down{color:var(--success);}
+  .weight-delta-flat{color:var(--text-dim);}
   .onboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
   .onboard-grid label{font-size:11.5px;color:var(--text-dim);display:flex;flex-direction:column;gap:5px;text-align:left;}
   .onboard-grid input{background:var(--fill);border:none;color:var(--text);padding:11px 12px;border-radius:11px;font-size:15px;}
@@ -586,6 +658,18 @@ const firebaseConfig = {
     content:'';position:absolute;top:-60%;right:-30%;width:70%;height:140%;
     background:radial-gradient(circle, var(--accent-dim) 0%, transparent 65%);
     pointer-events:none;opacity:0.6;
+  }
+  /* The generic hero-card ambient glow above is sized as a % of card height/width — fine for
+     compact hero cards (auth, today dashboard) but on a tall, wide panel like the Exercise
+     Library/Detail it scales into a large soft highlight sitting near the panel's top-right,
+     right where the two-column gutter is — this is the "tinted band cutting across the library"
+     that kept reappearing. These panels are dense functional surfaces, not hero cards, so they
+     get a quieter top-edge accent instead of the diffuse radial glow. */
+  #exercise-library.today-card::before,
+  #exercise-detail-panel.today-card::before,
+  #exercise-library .today-card::before,
+  #exercise-detail-panel .today-card::before{
+    content:none;
   }
   .live-greeting-card{
     display:flex;align-items:center;gap:9px;
@@ -638,6 +722,8 @@ const firebaseConfig = {
   .day-pill span{color:var(--text-tertiary);font-size:11px;margin-left:3px;}
   .day-pill.on{background:linear-gradient(135deg, var(--accent), #0968D6);color:#fff;font-weight:600;box-shadow:0 3px 10px var(--accent-dim);}
   .day-pill.on span{color:rgba(255,255,255,0.75);}
+  body[data-theme="goated"] .day-pill.on{background:linear-gradient(135deg, #FFD60A, #FF9500);color:#1A0B2E;box-shadow:0 3px 10px rgba(255,214,10,0.3);}
+  body[data-theme="goated"] .day-pill.on span{color:rgba(26,11,46,0.65);}
 
   .wo-card{
     background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -762,7 +848,7 @@ const firebaseConfig = {
   .goals-edit-grid label{font-size:11.5px;color:var(--text-dim);display:flex;flex-direction:column;gap:4px;}
   .goals-edit-grid input{background:var(--fill);border:none;color:var(--text);padding:9px 10px;border-radius:9px;font-size:14px;}
 
-  /* ---- Nutrition HUD gauge (Rep Log signature, not an Activity-ring clone) ---- */
+  /* ---- Nutrition HUD gauge (MYORYQ signature, not an Activity-ring clone) ---- */
   .hud-card{position:relative;overflow:hidden;}
   .kcal-value{
     font-family:var(--display);font-weight:800;font-size:44px;letter-spacing:-0.02em;
@@ -1007,34 +1093,50 @@ const firebaseConfig = {
   details.extra-log[open] summary{color:var(--text);}
 
   /* ---- Exercise library browser ---- */
-  #lib-search{background:var(--fill);border:none;color:var(--text);padding:12px 14px;font-size:15px;border-radius:12px;width:100%;font-family:var(--body);}
-  .lib-filter-row{margin-bottom:8px;}
-  .lib-filter-label{font-size:10px;font-weight:700;letter-spacing:0.06em;color:var(--text-tertiary);text-transform:uppercase;display:block;margin-bottom:5px;}
-  .lib-filter-chips{display:flex;flex-wrap:wrap;gap:5px;max-height:74px;overflow-y:auto;}
-  mark{background:var(--accent-dim);color:var(--accent);border-radius:3px;padding:0 1px;}
+  .lib-search-wrap{position:relative;margin-bottom:12px;}
+  .lib-search-wrap::before{
+    content:'';position:absolute;left:14px;top:50%;transform:translateY(-50%);
+    width:14px;height:14px;border:2px solid var(--text-tertiary);border-radius:50%;
+    box-shadow:5px 5px 0 -3px var(--text-tertiary);pointer-events:none;
+  }
+  #lib-search{
+    background:var(--fill);border:1px solid transparent;color:var(--text);
+    padding:13px 14px 13px 36px;font-size:15px;border-radius:13px;width:100%;font-family:var(--body);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  #lib-search:focus{border-color:var(--accent-dim);background:var(--card-hi);outline:none;box-shadow:0 0 0 3px var(--accent-dim);}
+  .lib-filter-row{margin-bottom:10px;}
+  .lib-filter-label{font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--text-tertiary);text-transform:uppercase;display:block;margin-bottom:6px;}
+  .lib-filter-chips{display:flex;flex-wrap:wrap;gap:6px;max-height:74px;overflow-y:auto;}
+  .lib-filter-chips button{transition:background .15s ease, color .15s ease, transform .12s ease, box-shadow .15s ease;}
+  .lib-filter-chips button.on{box-shadow:0 3px 10px var(--accent-dim);}
+  mark{background:var(--accent-dim);color:var(--accent);border-radius:3px;padding:0 1px;font-weight:700;}
 
   .lib-card{
     background:var(--fill);border:1px solid transparent;border-radius:14px;
-    padding:12px 14px;margin-bottom:8px;cursor:pointer;
-    transition:transform .18s ease, border-color .18s ease, background .18s ease;
+    padding:13px 14px;margin-bottom:8px;cursor:pointer;position:relative;
+    transition:transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
   }
-  .lib-card:hover{transform:translateY(-2px);border-color:var(--accent-dim);background:var(--card-hi);}
+  .lib-card:hover{transform:translateY(-2px);border-color:var(--accent-dim);background:var(--card-hi);box-shadow:0 8px 20px rgba(0,0,0,0.25);}
   .lib-card:active{transform:translateY(0px) scale(0.99);}
+  .lib-card.selected{border-color:var(--accent);background:var(--card-hi);box-shadow:0 0 0 1px var(--accent), 0 8px 20px var(--accent-dim);}
   .lib-card-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
-  .lib-card-name{font-size:14.5px;font-weight:600;color:var(--text);}
+  .lib-card-name{font-size:14.5px;font-weight:650;color:var(--text);letter-spacing:-0.005em;}
   .lib-add-btn{
     flex:0 0 auto;background:var(--accent-dim);border:none;color:var(--accent);
     font-size:14px;font-weight:700;width:28px;height:28px;border-radius:50%;cursor:pointer;
-    transition:transform .15s ease, background .15s ease;
+    transition:transform .15s ease, background .15s ease, box-shadow .15s ease;
   }
+  .lib-add-btn:hover{box-shadow:0 0 0 4px var(--accent-dim);}
   .lib-add-btn:active{transform:scale(0.88);}
   .lib-add-btn.added{background:var(--success);color:#fff;}
   .lib-card-sub{font-size:12px;color:var(--text-dim);margin-top:5px;}
-  .lib-card-equip{font-size:10.5px;color:var(--text-tertiary);margin-top:2px;text-transform:uppercase;letter-spacing:0.03em;}
+  .lib-card-equip{font-size:10.5px;color:var(--text-tertiary);margin-top:2px;text-transform:uppercase;letter-spacing:0.04em;}
   .in-program-badge{
     display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:0.06em;
     color:var(--success);background:rgba(48,209,88,0.14);padding:3px 8px;border-radius:8px;
   }
+  body[data-theme="goated"] .in-program-badge{color:#39FF88;background:rgba(57,255,136,0.14);}
   .in-program-badge-sm{margin-top:6px;}
 
   /* ---- Muscle map ---- */
@@ -1052,12 +1154,20 @@ const firebaseConfig = {
   .detail-muscle-rows{margin:10px 0 6px;}
   .detail-muscle-row{font-size:12.5px;color:var(--text);margin-bottom:5px;}
   .detail-section-label{
-    font-size:10px;font-weight:700;letter-spacing:0.07em;color:var(--text-tertiary);
+    font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--text-tertiary);
     text-transform:uppercase;margin:14px 0 6px;padding-top:10px;border-top:1px solid var(--border);
   }
   .detail-perf-row{font-size:13.5px;color:var(--text);font-variant-numeric:tabular-nums;margin-bottom:3px;}
-  .detail-pb-row{font-size:16px;font-weight:700;color:var(--success);font-variant-numeric:tabular-nums;}
-  .detail-beat-row{font-size:15px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;}
+  .detail-pb-row{
+    display:inline-block;font-size:16px;font-weight:800;color:var(--success);font-variant-numeric:tabular-nums;
+    background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.22);padding:6px 12px;border-radius:10px;
+  }
+  .detail-beat-row{
+    display:inline-block;font-size:15px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;
+    background:var(--accent-dim);border:1px solid var(--accent-dim);padding:6px 12px;border-radius:10px;
+  }
+  body[data-theme="goated"] .detail-pb-row{color:#39FF88;background:rgba(57,255,136,0.1);border-color:rgba(57,255,136,0.22);}
+  body[data-theme="goated"] .detail-beat-row{color:#FFD60A;background:rgba(255,214,10,0.12);border-color:rgba(255,214,10,0.25);}
   .detail-empty{font-size:12.5px;color:var(--text-tertiary);margin-top:10px;line-height:1.5;}
   .detail-add-row{display:flex;flex-wrap:wrap;gap:6px;}
 
@@ -1138,16 +1248,40 @@ const firebaseConfig = {
 
 <div id="auth-gate">
   <div class="auth-card">
-    <div class="auth-icon">
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-        <rect x="4" y="13" width="22" height="4" rx="2" fill="#fff"/>
-        <rect x="1" y="9" width="5" height="12" rx="2" fill="#fff"/>
-        <rect x="24" y="9" width="5" height="12" rx="2" fill="#fff"/>
+    <div class="auth-icon brand-mark brand-mark-lg">
+      <svg viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="bgGradAuth" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#2A1050"/>
+            <stop offset="55%" stop-color="#170826"/>
+            <stop offset="100%" stop-color="#07020D"/>
+          </linearGradient>
+          <radialGradient id="glowGradAuth" cx="50%" cy="34%" r="55%">
+            <stop offset="0%" stop-color="#FFD60A" stop-opacity="0.40"/>
+            <stop offset="55%" stop-color="#FFD60A" stop-opacity="0.10"/>
+            <stop offset="100%" stop-color="#FFD60A" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="goldGradAuth" x1="20" y1="0" x2="80" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FFE45C"/>
+            <stop offset="55%" stop-color="#FFD60A"/>
+            <stop offset="100%" stop-color="#FF9F0A"/>
+          </linearGradient>
+          <radialGradient id="nodeGradAuth" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFB0E8"/>
+            <stop offset="100%" stop-color="#E838C4"/>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="100" height="100" rx="22" fill="url(#bgGradAuth)"/>
+        <rect x="1.2" y="1.2" width="97.6" height="97.6" rx="21" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="1.2"/>
+        <circle cx="50" cy="36" r="46" fill="url(#glowGradAuth)"/>
+        <path d="M 26 76 L 26 28 L 50 54 L 74 28 L 74 76" fill="none" stroke="url(#goldGradAuth)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="74" cy="28" r="6.4" fill="url(#nodeGradAuth)"/>
+        <circle cx="72" cy="26" r="2" fill="#ffffff" fill-opacity="0.55"/>
       </svg>
     </div>
-    <h1>Rep Log</h1>
-    <div class="auth-tagline">Train. Track. Progress.</div>
-    <p id="auth-subtitle">Sign in to sync your log across every device.</p>
+    <h1 class="brand-wordmark">MYORYQ</h1>
+    <div class="auth-tagline">Progress, quantified.</div>
+    <p id="auth-subtitle">Sign in to sync your training across every device.</p>
     <div class="auth-error" id="auth-error"></div>
     <input type="email" id="auth-email" placeholder="Email" autocomplete="email">
     <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password">
@@ -1160,11 +1294,35 @@ const firebaseConfig = {
 
 <div id="onboarding-gate" style="display:none;">
   <div class="auth-card">
-    <div class="auth-icon">
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-        <rect x="4" y="13" width="22" height="4" rx="2" fill="#fff"/>
-        <rect x="1" y="9" width="5" height="12" rx="2" fill="#fff"/>
-        <rect x="24" y="9" width="5" height="12" rx="2" fill="#fff"/>
+    <div class="auth-icon brand-mark brand-mark-lg">
+      <svg viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="bgGradOnb" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#2A1050"/>
+            <stop offset="55%" stop-color="#170826"/>
+            <stop offset="100%" stop-color="#07020D"/>
+          </linearGradient>
+          <radialGradient id="glowGradOnb" cx="50%" cy="34%" r="55%">
+            <stop offset="0%" stop-color="#FFD60A" stop-opacity="0.40"/>
+            <stop offset="55%" stop-color="#FFD60A" stop-opacity="0.10"/>
+            <stop offset="100%" stop-color="#FFD60A" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="goldGradOnb" x1="20" y1="0" x2="80" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FFE45C"/>
+            <stop offset="55%" stop-color="#FFD60A"/>
+            <stop offset="100%" stop-color="#FF9F0A"/>
+          </linearGradient>
+          <radialGradient id="nodeGradOnb" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFB0E8"/>
+            <stop offset="100%" stop-color="#E838C4"/>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="100" height="100" rx="22" fill="url(#bgGradOnb)"/>
+        <rect x="1.2" y="1.2" width="97.6" height="97.6" rx="21" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="1.2"/>
+        <circle cx="50" cy="36" r="46" fill="url(#glowGradOnb)"/>
+        <path d="M 26 76 L 26 28 L 50 54 L 74 28 L 74 76" fill="none" stroke="url(#goldGradOnb)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="74" cy="28" r="6.4" fill="url(#nodeGradOnb)"/>
+        <circle cx="72" cy="26" r="2" fill="#ffffff" fill-opacity="0.55"/>
       </svg>
     </div>
 
@@ -1209,7 +1367,40 @@ const firebaseConfig = {
 
 <div class="wrap" id="app-wrap" style="display:none;">
   <div class="hdr">
-    <h1>Rep Log <span class="trial-badge">TRIAL</span></h1>
+    <div class="hdr-brand">
+      <div class="brand-mark brand-mark-sm">
+        <svg viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="bgGradHdr" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#2A1050"/>
+            <stop offset="55%" stop-color="#170826"/>
+            <stop offset="100%" stop-color="#07020D"/>
+          </linearGradient>
+          <radialGradient id="glowGradHdr" cx="50%" cy="34%" r="55%">
+            <stop offset="0%" stop-color="#FFD60A" stop-opacity="0.40"/>
+            <stop offset="55%" stop-color="#FFD60A" stop-opacity="0.10"/>
+            <stop offset="100%" stop-color="#FFD60A" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="goldGradHdr" x1="20" y1="0" x2="80" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FFE45C"/>
+            <stop offset="55%" stop-color="#FFD60A"/>
+            <stop offset="100%" stop-color="#FF9F0A"/>
+          </linearGradient>
+          <radialGradient id="nodeGradHdr" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFB0E8"/>
+            <stop offset="100%" stop-color="#E838C4"/>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="100" height="100" rx="22" fill="url(#bgGradHdr)"/>
+        <rect x="1.2" y="1.2" width="97.6" height="97.6" rx="21" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="1.2"/>
+        <circle cx="50" cy="36" r="46" fill="url(#glowGradHdr)"/>
+        <path d="M 26 76 L 26 28 L 50 54 L 74 28 L 74 76" fill="none" stroke="url(#goldGradHdr)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="74" cy="28" r="6.4" fill="url(#nodeGradHdr)"/>
+        <circle cx="72" cy="26" r="2" fill="#ffffff" fill-opacity="0.55"/>
+      </svg>
+      </div>
+      <h1 class="brand-wordmark">MYORYQ <span class="trial-badge">TRIAL</span></h1>
+    </div>
     <div class="hdr-meta">
       <div class="sync-status"><span class="sync-dot" id="sync-dot"></span></div>
       <div class="profile-menu-wrap">
@@ -1222,6 +1413,7 @@ const firebaseConfig = {
             <button class="theme-pill" data-theme-pick="light">Light</button>
             <button class="theme-pill theme-pill-goated" data-theme-pick="goated">Goated</button>
           </div>
+          <button class="profile-menu-item" id="profile-goals-btn" style="margin-bottom:6px;">Profile &amp; Goals</button>
           <button class="profile-menu-item" id="export-csv-btn" style="margin-bottom:6px;">Export as CSV</button>
           <button class="profile-menu-item" id="export-data-btn" style="margin-bottom:6px;">Export my data</button>
           <button class="profile-menu-item" id="signout-btn">Sign out</button>
@@ -1323,6 +1515,8 @@ const firebaseConfig = {
       </form>
     </details>
   </div>
+
+  <div id="profile-panel" style="display:none;"></div>
 </div>
 
 <script>
@@ -1411,19 +1605,20 @@ document.getElementById('auth-submit').onclick = async () => {
 };
 
 document.getElementById('signout-btn').onclick = () => auth.signOut();
+document.getElementById('profile-goals-btn').onclick = () => openProfilePanel();
 
 document.getElementById('export-data-btn').onclick = () => {
   const exportData = {
     exportedAt: new Date().toISOString(),
     account: currentUser ? currentUser.email : null,
     sets, myExercises, workoutSessions, programOverrides, customExercises,
-    foodEntries, nutritionGoals, savedMeals, themeMode
+    foodEntries, dailyGoals, savedMeals, themeMode
   };
   const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'rep-log-export-' + new Date().toISOString().slice(0,10) + '.json';
+  a.download = 'myoryq-export-' + new Date().toISOString().slice(0,10) + '.json';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1479,7 +1674,7 @@ document.getElementById('export-csv-btn').onclick = () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'rep-log-logs-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.download = 'myoryq-logs-' + new Date().toISOString().slice(0,10) + '.csv';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1553,8 +1748,8 @@ document.getElementById('onboard-training-skip').onclick = ()=>{
 document.getElementById('onboard-continue').onclick = ()=>{
   const cal = Number(document.getElementById('ob-calories').value);
   const pro = Number(document.getElementById('ob-protein').value);
-  if(cal>0) nutritionGoals.calories = cal;
-  if(pro>0) nutritionGoals.protein = pro;
+  if(cal>0) dailyGoals.calories = cal;
+  if(pro>0) dailyGoals.protein = pro;
   saveFood();
   finishOnboarding();
 };
@@ -1573,15 +1768,34 @@ function attachSync(uid){
       programOverrides = data.programOverrides ? JSON.parse(data.programOverrides) : {};
       customExercises = data.customExercises ? JSON.parse(data.customExercises) : {};
       foodEntries = data.foodEntries ? JSON.parse(data.foodEntries) : [];
-      nutritionGoals = data.nutritionGoals ? JSON.parse(data.nutritionGoals) : { calories:2200, protein:150, carbs:250, fat:70 };
       savedMeals = data.savedMeals ? JSON.parse(data.savedMeals) : [];
-      waterGoal = data.waterGoal || 3000;
       waterEntries = data.waterEntries ? JSON.parse(data.waterEntries) : [];
-      stepsGoal = data.stepsGoal || 10000;
       stepsEntries = data.stepsEntries ? JSON.parse(data.stepsEntries) : [];
       supplements = data.supplements ? JSON.parse(data.supplements) : [];
       supplementLogs = data.supplementLogs ? JSON.parse(data.supplementLogs) : [];
       themeMode = data.themeMode || 'dark';
+
+      if(data.dailyGoals){
+        dailyGoals = JSON.parse(data.dailyGoals);
+      }else{
+        // One-time migration from the old separate goal fields — preserves whatever the user
+        // actually had set, rather than resetting anyone to defaults.
+        const oldNutrition = data.nutritionGoals ? JSON.parse(data.nutritionGoals) : { calories:2200, protein:150, carbs:250, fat:70 };
+        dailyGoals = {
+          calories: oldNutrition.calories, protein: oldNutrition.protein, carbs: oldNutrition.carbs, fat: oldNutrition.fat,
+          water: data.waterGoal || 3000,
+          steps: data.stepsGoal || 10000
+        };
+        saveGoals();
+      }
+
+      if(data.userProfile){
+        userProfile = JSON.parse(data.userProfile);
+      }else{
+        userProfile = { displayName:'', dob:'', heightCm:null, units:'metric', primaryGoal:'', activityLevel:'' };
+      }
+      weightEntries = data.weightEntries ? JSON.parse(data.weightEntries) : [];
+
       if(data.userRoutine){
         userRoutine = JSON.parse(data.userRoutine);
         archivedRoutines = data.archivedRoutines ? JSON.parse(data.archivedRoutines) : [];
@@ -1597,11 +1811,11 @@ function attachSync(uid){
       programOverrides = {};
       customExercises = {};
       foodEntries = [];
-      nutritionGoals = { calories:2200, protein:150, carbs:250, fat:70 };
+      dailyGoals = { calories:2200, protein:150, carbs:250, fat:70, water:3000, steps:10000 };
+      userProfile = { displayName:'', dob:'', heightCm:null, units:'metric', primaryGoal:'', activityLevel:'' };
+      weightEntries = [];
       savedMeals = [];
-      waterGoal = 3000;
       waterEntries = [];
-      stepsGoal = 10000;
       stepsEntries = [];
       supplements = [];
       supplementLogs = [];
@@ -1674,6 +1888,305 @@ async function saveProgramOverrides(){
   }
 }
 
+async function saveGoals(){
+  if(!currentUser) return;
+  try{
+    await db.collection('users').doc(currentUser.uid).set({ dailyGoals: JSON.stringify(dailyGoals) }, { merge: true });
+    setSyncStatus(true);
+  }catch(e){
+    console.error('Could not save goals', e);
+    setSyncStatus(false);
+  }
+}
+
+async function saveProfile(){
+  if(!currentUser) return;
+  try{
+    await db.collection('users').doc(currentUser.uid).set({ userProfile: JSON.stringify(userProfile) }, { merge: true });
+    setSyncStatus(true);
+  }catch(e){
+    console.error('Could not save profile', e);
+    setSyncStatus(false);
+  }
+}
+
+async function saveWeight(){
+  if(!currentUser) return;
+  try{
+    await db.collection('users').doc(currentUser.uid).set({ weightEntries: JSON.stringify(weightEntries) }, { merge: true });
+    setSyncStatus(true);
+  }catch(e){
+    console.error('Could not save weight', e);
+    setSyncStatus(false);
+  }
+}
+
+const PRIMARY_GOALS = ['Lose Fat','Maintain','Build Muscle','Improve Performance','Custom'];
+const ACTIVITY_LEVELS = ['Sedentary','Light','Moderate','Active','Very Active'];
+
+function openProfilePanel(){
+  showProfilePanel = true;
+  showProfileEditor = false;
+  showGoalsEditor = false;
+  showLogWeight = false;
+  editingWeightId = null;
+  document.getElementById('profile-menu').style.display = 'none';
+  renderProfilePanel();
+}
+function closeProfilePanel(){
+  showProfilePanel = false;
+  showProfileEditor = false;
+  showGoalsEditor = false;
+  showLogWeight = false;
+  editingWeightId = null;
+  document.getElementById('profile-panel').style.display = 'none';
+  document.getElementById('profile-panel').innerHTML = '';
+}
+
+function renderProfilePanel(){
+  const el = document.getElementById('profile-panel');
+  if(!showProfilePanel){ el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = 'block';
+
+  const bmi = computeBMI();
+  const curWeightKg = getCurrentWeightKg();
+  const dispWeight = displayWeightFromKg(curWeightKg);
+  const dispHeight = displayHeight();
+  const unitLabel = weightUnitLabel();
+
+  let html = '<div class="profile-panel-inner">';
+  html += '<div class="profile-panel-hdr"><h2>Profile &amp; Goals</h2><button type="button" class="change-workout" id="profile-panel-close">Done</button></div>';
+
+  // ---- PROFILE ----
+  html += '<div class="today-card" style="margin-bottom:14px;">';
+  if(!showProfileEditor){
+    const initial = (userProfile.displayName||'?').trim().charAt(0).toUpperCase() || '?';
+    html += '<div class="profile-hero-row"><div class="profile-avatar-ring">'+escapeHtml(initial)+'</div><div>'
+      + '<div class="profile-hero-name">'+escapeHtml(userProfile.displayName || 'Your Profile')+'</div>'
+      + '<div class="profile-hero-sub">'+escapeHtml(userProfile.primaryGoal || 'MYORYQ member')+'</div>'
+    + '</div></div>';
+    html += '<div class="profile-stat-row">'
+      + '<div class="profile-stat"><span class="profile-stat-value">'+(dispWeight!=null ? dispWeight+' '+unitLabel : '—')+'</span><span class="profile-stat-label">Weight</span></div>'
+      + '<div class="profile-stat"><span class="profile-stat-value">'+(dispHeight || '—')+'</span><span class="profile-stat-label">Height</span></div>'
+      + '<div class="profile-stat"><span class="profile-stat-value">'+(bmi!=null ? bmi.toFixed(1) : '—')+'</span><span class="profile-stat-label">BMI'+(bmi==null?' — add height &amp; weight':'')+'</span></div>'
+    + '</div>';
+    html += '<button type="button" class="add-btn" id="edit-profile-btn">Edit Profile</button>';
+  }else{
+    const heightVal = userProfile.units==='imperial'
+      ? (userProfile.heightCm ? cmToFtIn(userProfile.heightCm) : {ft:'',inch:''})
+      : null;
+    html += '<div class="today-top"><div class="today-title" style="font-size:16px;">Edit Profile</div></div>';
+    html += '<div class="row"><input type="text" id="pf-name" placeholder="Display name" value="'+escapeHtml(userProfile.displayName||'')+'"></div>';
+    html += '<div class="row" style="margin-top:8px;"><input type="date" id="pf-dob" value="'+escapeHtml(userProfile.dob||'')+'"></div>';
+    html += '<div class="detail-section-label">Units</div>';
+    html += '<div class="lib-filter-chips"><button type="button" class="day-pill'+(userProfile.units!=='imperial'?' on':'')+'" data-units="metric">Metric</button><button type="button" class="day-pill'+(userProfile.units==='imperial'?' on':'')+'" data-units="imperial">Imperial</button></div>';
+    html += '<div class="detail-section-label">Height</div>';
+    if(userProfile.units==='imperial'){
+      html += '<div class="row"><input type="number" id="pf-height-ft" placeholder="ft" min="0" style="flex:1;" value="'+(heightVal.ft!==''?heightVal.ft:'')+'"><input type="number" id="pf-height-in" placeholder="in" min="0" max="11" style="flex:1;" value="'+(heightVal.inch!==''?heightVal.inch:'')+'"></div>';
+    }else{
+      html += '<div class="row"><input type="number" id="pf-height-cm" placeholder="cm" min="0" value="'+(userProfile.heightCm||'')+'"></div>';
+    }
+    html += '<div class="row" style="margin-top:14px;"><button type="button" class="add-btn" id="save-profile-btn" style="flex:1;">Save</button><button type="button" class="finish-bar-btn-secondary" id="cancel-profile-btn" style="flex:1;">Cancel</button></div>';
+  }
+  html += '</div>';
+
+  // ---- GOAL ----
+  html += '<div class="today-card" style="margin-bottom:14px;">';
+  html += '<div class="today-top"><div class="today-title" style="font-size:16px;">Goal</div></div>';
+  html += '<div class="detail-section-label">Primary goal</div>';
+  html += '<div class="profile-goal-pill-row">' + PRIMARY_GOALS.map(g=>'<button type="button" class="day-pill'+(userProfile.primaryGoal===g?' on':'')+'" data-primarygoal="'+escapeHtml(g)+'">'+escapeHtml(g)+'</button>').join('') + '</div>';
+  html += '<div class="detail-section-label" style="margin-top:12px;">Activity level</div>';
+  html += '<div class="profile-goal-pill-row">' + ACTIVITY_LEVELS.map(a=>'<button type="button" class="day-pill'+(userProfile.activityLevel===a?' on':'')+'" data-activitylevel="'+escapeHtml(a)+'">'+escapeHtml(a)+'</button>').join('') + '</div>';
+  html += '<div class="meal-edit-note">Stored for context only — this never automatically changes your daily targets below.</div>';
+  html += '</div>';
+
+  // ---- DAILY TARGETS ----
+  html += '<div class="today-card" style="margin-bottom:14px;">';
+  if(!showGoalsEditor){
+    html += '<div class="today-top"><div class="today-title" style="font-size:16px;">Daily Targets</div><button type="button" class="change-workout" id="edit-pg-goals-btn">Edit</button></div>';
+    html += '<div class="goal-target-row"><span>🔥 Calories</span><span>'+dailyGoals.calories.toLocaleString()+' kcal</span></div>';
+    html += '<div class="goal-target-row"><span>🥩 Protein</span><span>'+dailyGoals.protein+' g</span></div>';
+    html += '<div class="goal-target-row"><span>🍞 Carbs</span><span>'+dailyGoals.carbs+' g</span></div>';
+    html += '<div class="goal-target-row"><span>🥑 Fat</span><span>'+dailyGoals.fat+' g</span></div>';
+    html += '<div class="goal-target-row"><span>💧 Water</span><span>'+(dailyGoals.water/1000).toFixed(1)+' L</span></div>';
+    html += '<div class="goal-target-row"><span>👟 Steps</span><span>'+dailyGoals.steps.toLocaleString()+'</span></div>';
+  }else{
+    html += '<div class="today-top"><div class="today-title" style="font-size:16px;">Edit Targets</div></div>';
+    html += '<div class="goals-edit-grid">'
+      + '<label>Calories<input type="number" id="pg-calories" value="'+dailyGoals.calories+'"></label>'
+      + '<label>Protein (g)<input type="number" id="pg-protein" value="'+dailyGoals.protein+'"></label>'
+      + '<label>Carbs (g)<input type="number" id="pg-carbs" value="'+dailyGoals.carbs+'"></label>'
+      + '<label>Fat (g)<input type="number" id="pg-fat" value="'+dailyGoals.fat+'"></label>'
+      + '<label>Water (L)<input type="number" step="0.5" id="pg-water" value="'+(dailyGoals.water/1000)+'"></label>'
+      + '<label>Steps<input type="number" step="500" id="pg-steps" value="'+dailyGoals.steps+'"></label>'
+    + '</div>';
+    html += '<div class="row" style="margin-top:14px;"><button type="button" class="add-btn" id="save-pg-goals-btn" style="flex:1;">Save</button><button type="button" class="finish-bar-btn-secondary" id="cancel-pg-goals-btn" style="flex:1;">Cancel</button></div>';
+  }
+  html += '</div>';
+
+  // ---- WEIGHT ----
+  const prevChange = getWeightChangeFromPrevious();
+  const change7d = get7DayWeightChange();
+  html += '<div class="today-card" style="margin-bottom:14px;">';
+  html += '<div class="today-top"><div class="today-title" style="font-size:16px;">Weight</div></div>';
+  html += '<div class="profile-stat-row">'
+    + '<div class="profile-stat"><span class="profile-stat-value">'+(dispWeight!=null?dispWeight+' '+unitLabel:'—')+'</span><span class="profile-stat-label">Current</span></div>';
+  if(prevChange!=null){
+    const dv = displayWeightFromKg(Math.abs(prevChange));
+    const cls = prevChange>0 ? 'weight-delta-up' : (prevChange<0 ? 'weight-delta-down' : 'weight-delta-flat');
+    html += '<div class="profile-stat"><span class="profile-stat-value '+cls+'">'+(prevChange>0?'+':prevChange<0?'−':'')+dv+' '+unitLabel+'</span><span class="profile-stat-label">vs last entry</span></div>';
+  }
+  if(change7d!=null){
+    const dv7 = displayWeightFromKg(Math.abs(change7d));
+    const cls7 = change7d>0 ? 'weight-delta-up' : (change7d<0 ? 'weight-delta-down' : 'weight-delta-flat');
+    html += '<div class="profile-stat"><span class="profile-stat-value '+cls7+'">'+(change7d>0?'+':change7d<0?'−':'')+dv7+' '+unitLabel+'</span><span class="profile-stat-label">7 days</span></div>';
+  }
+  html += '</div>';
+
+  if(showLogWeight){
+    const editing = editingWeightId ? weightEntries.find(w=>w.id===editingWeightId) : null;
+    const prefill = editing ? displayWeightFromKg(editing.weightKg) : '';
+    html += '<div class="row"><input type="number" step="0.1" id="wt-input" placeholder="Weight ('+unitLabel+')" value="'+prefill+'"></div>';
+    html += '<div class="row" style="margin-top:14px;"><button type="button" class="add-btn" id="save-weight-btn" style="flex:1;">'+(editing?'Save Changes':'Log Weight')+'</button><button type="button" class="finish-bar-btn-secondary" id="cancel-weight-btn" style="flex:1;">Cancel</button></div>';
+  }else{
+    html += '<button type="button" class="add-btn" id="log-weight-btn">+ Log Weight</button>';
+  }
+
+  const recent = sortedWeightEntries().slice(0,5);
+  if(recent.length){
+    html += '<div class="detail-section-label" style="margin-top:14px;">Recent entries</div>';
+    recent.forEach(entry=>{
+      const d = new Date(entry.timestamp);
+      const dateStr = d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+      html += '<div class="weight-entry-row"><span>'+dateStr+'</span><span>'+displayWeightFromKg(entry.weightKg)+' '+unitLabel+'</span>'
+        + '<span class="weight-entry-actions"><button type="button" data-editweight="'+entry.id+'">✎</button><button type="button" data-deleteweight="'+entry.id+'">✕</button></span></div>';
+    });
+  }
+  html += '</div>';
+
+  html += '</div>'; // .profile-panel-inner
+  el.innerHTML = html;
+  wireProfilePanelEvents();
+}
+
+function wireProfilePanelEvents(){
+  const closeBtn = document.getElementById('profile-panel-close');
+  if(closeBtn) closeBtn.onclick = closeProfilePanel;
+
+  const editProfileBtn = document.getElementById('edit-profile-btn');
+  if(editProfileBtn) editProfileBtn.onclick = ()=>{ showProfileEditor = true; renderProfilePanel(); };
+  const cancelProfileBtn = document.getElementById('cancel-profile-btn');
+  if(cancelProfileBtn) cancelProfileBtn.onclick = ()=>{ showProfileEditor = false; renderProfilePanel(); };
+
+  let pendingUnits = userProfile.units;
+  document.querySelectorAll('[data-units]').forEach(btn=>{
+    btn.onclick = ()=>{
+      pendingUnits = btn.getAttribute('data-units');
+      document.querySelectorAll('[data-units]').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on');
+      // Re-render the height inputs in the newly chosen unit immediately, converting any value already entered
+      const cmInput = document.getElementById('pf-height-cm');
+      const ftInput = document.getElementById('pf-height-ft');
+      const inInput = document.getElementById('pf-height-in');
+      let cmVal = null;
+      if(cmInput && cmInput.value) cmVal = Number(cmInput.value);
+      else if(ftInput) cmVal = ftInToCm(Number(ftInput.value||0), Number(inInput.value||0));
+      userProfile.units = pendingUnits;
+      if(cmVal) userProfile.heightCm = cmVal;
+      renderProfilePanel();
+      showProfileEditor = true;
+    };
+  });
+
+  const saveProfileBtn = document.getElementById('save-profile-btn');
+  if(saveProfileBtn) saveProfileBtn.onclick = ()=>{
+    userProfile.displayName = document.getElementById('pf-name').value.trim();
+    userProfile.dob = document.getElementById('pf-dob').value;
+    userProfile.units = pendingUnits;
+    if(userProfile.units==='imperial'){
+      const ft = Number(document.getElementById('pf-height-ft').value||0);
+      const inch = Number(document.getElementById('pf-height-in').value||0);
+      userProfile.heightCm = (ft||inch) ? ftInToCm(ft, inch) : userProfile.heightCm;
+    }else{
+      const cm = Number(document.getElementById('pf-height-cm').value||0);
+      userProfile.heightCm = cm>0 ? cm : userProfile.heightCm;
+    }
+    saveProfile();
+    showProfileEditor = false;
+    renderProfilePanel();
+  };
+
+  document.querySelectorAll('[data-primarygoal]').forEach(btn=>{
+    btn.onclick = ()=>{
+      userProfile.primaryGoal = btn.getAttribute('data-primarygoal');
+      saveProfile();
+      renderProfilePanel();
+    };
+  });
+  document.querySelectorAll('[data-activitylevel]').forEach(btn=>{
+    btn.onclick = ()=>{
+      userProfile.activityLevel = btn.getAttribute('data-activitylevel');
+      saveProfile();
+      renderProfilePanel();
+    };
+  });
+
+  const editGoalsBtn = document.getElementById('edit-pg-goals-btn');
+  if(editGoalsBtn) editGoalsBtn.onclick = ()=>{ showGoalsEditor = true; renderProfilePanel(); };
+  const cancelGoalsBtn = document.getElementById('cancel-pg-goals-btn');
+  if(cancelGoalsBtn) cancelGoalsBtn.onclick = ()=>{ showGoalsEditor = false; renderProfilePanel(); };
+  const saveGoalsBtn = document.getElementById('save-pg-goals-btn');
+  if(saveGoalsBtn) saveGoalsBtn.onclick = ()=>{
+    dailyGoals.calories = Number(document.getElementById('pg-calories').value)||dailyGoals.calories;
+    dailyGoals.protein = Number(document.getElementById('pg-protein').value)||dailyGoals.protein;
+    dailyGoals.carbs = Number(document.getElementById('pg-carbs').value)||dailyGoals.carbs;
+    dailyGoals.fat = Number(document.getElementById('pg-fat').value)||dailyGoals.fat;
+    const litres = Number(document.getElementById('pg-water').value);
+    if(litres>0) dailyGoals.water = Math.round(litres*1000);
+    const steps = Number(document.getElementById('pg-steps').value);
+    if(steps>0) dailyGoals.steps = Math.round(steps);
+    saveGoals();
+    showGoalsEditor = false;
+    renderProfilePanel();
+  };
+
+  const logWeightBtn = document.getElementById('log-weight-btn');
+  if(logWeightBtn) logWeightBtn.onclick = ()=>{ showLogWeight = true; editingWeightId = null; renderProfilePanel(); };
+  const cancelWeightBtn = document.getElementById('cancel-weight-btn');
+  if(cancelWeightBtn) cancelWeightBtn.onclick = ()=>{ showLogWeight = false; editingWeightId = null; renderProfilePanel(); };
+  const saveWeightBtn = document.getElementById('save-weight-btn');
+  if(saveWeightBtn) saveWeightBtn.onclick = ()=>{
+    const kg = inputWeightToKg(document.getElementById('wt-input').value);
+    if(!kg){ alert('Enter a valid weight.'); return; }
+    if(editingWeightId){
+      const entry = weightEntries.find(w=>w.id===editingWeightId);
+      if(entry) entry.weightKg = kg;
+    }else{
+      weightEntries.push({ id:'weight_'+Date.now()+'_'+Math.floor(Math.random()*1000), timestamp:Date.now(), weightKg:kg });
+    }
+    saveWeight();
+    showLogWeight = false;
+    editingWeightId = null;
+    renderProfilePanel();
+  };
+  document.querySelectorAll('[data-editweight]').forEach(btn=>{
+    btn.onclick = ()=>{
+      editingWeightId = btn.getAttribute('data-editweight');
+      showLogWeight = true;
+      renderProfilePanel();
+    };
+  });
+  document.querySelectorAll('[data-deleteweight]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = btn.getAttribute('data-deleteweight');
+      if(!confirm('Delete this weight entry? This cannot be undone.')) return;
+      weightEntries = weightEntries.filter(w=>w.id!==id);
+      saveWeight();
+      renderProfilePanel();
+    };
+  });
+}
+
 async function saveRoutine(){
   if(!currentUser || !userRoutine) return;
   try{
@@ -1693,11 +2206,9 @@ async function saveFood(){
   try{
     await db.collection('users').doc(currentUser.uid).set({
       foodEntries: JSON.stringify(foodEntries),
-      nutritionGoals: JSON.stringify(nutritionGoals),
+      dailyGoals: JSON.stringify(dailyGoals),
       savedMeals: JSON.stringify(savedMeals),
-      waterGoal: waterGoal,
       waterEntries: JSON.stringify(waterEntries),
-      stepsGoal: stepsGoal,
       stepsEntries: JSON.stringify(stepsEntries),
       supplements: JSON.stringify(supplements),
       supplementLogs: JSON.stringify(supplementLogs)
@@ -1980,12 +2491,76 @@ let workoutSessions = [];
 let programOverrides = {};  // { [workoutName]: { removed:[exerciseId,...], added:[{id,name,sets,repMin,repMax,rest,section}] } }
 let customExercises = {};   // { [id]: {name, primaryMuscle, secondaryMuscles, type, alternatives} } — user-created exercises not in the built-in library
 let foodEntries = [];       // { id, name, calories, protein, carbs, fat, timestamp }
-let nutritionGoals = { calories:2200, protein:150, carbs:250, fat:70 };
+let dailyGoals = { calories:2200, protein:150, carbs:250, fat:70, water:3000, steps:10000 }; // THE single authoritative goal source
+let userProfile = { displayName:'', dob:'', heightCm:null, units:'metric', primaryGoal:'', activityLevel:'' }; // deliberately NO weight field — current weight always derives from weightEntries
+let weightEntries = []; // { id, timestamp, weightKg } — canonical storage is always kg; imperial is a display/input conversion only
+let showProfileEditor = false;
+let showGoalsEditor = false;
+let showLogWeight = false;
+
+function kgToLb(kg){ return kg * 2.20462; }
+function lbToKg(lb){ return lb / 2.20462; }
+function cmToFtIn(cm){ const totalIn = cm/2.54; const ft = Math.floor(totalIn/12); const inch = Math.round(totalIn%12); return {ft, inch}; }
+function ftInToCm(ft, inch){ return ((ft*12)+Number(inch||0)) * 2.54; }
+
+function getCurrentWeightKg(){
+  if(weightEntries.length===0) return null;
+  const latest = weightEntries.slice().sort((a,b)=>b.timestamp-a.timestamp)[0];
+  return latest.weightKg;
+}
+function computeBMI(){
+  const w = getCurrentWeightKg();
+  const h = userProfile.heightCm;
+  if(!w || !h) return null;
+  return w / Math.pow(h/100, 2);
+}
+
+let showProfilePanel = false;
+let editingWeightId = null; // weight entry id currently pre-filled into the Log Weight form for editing, or null = logging a new entry
+
+function weightUnitLabel(){ return userProfile.units==='imperial' ? 'lb' : 'kg'; }
+function displayWeightFromKg(kg){
+  if(kg==null) return null;
+  const v = userProfile.units==='imperial' ? kgToLb(kg) : kg;
+  return Math.round(v*10)/10;
+}
+function inputWeightToKg(value){
+  const n = Number(value);
+  if(!n || n<=0) return null;
+  return userProfile.units==='imperial' ? lbToKg(n) : n;
+}
+function displayHeight(){
+  if(!userProfile.heightCm) return null;
+  if(userProfile.units==='imperial'){
+    const {ft,inch} = cmToFtIn(userProfile.heightCm);
+    return ft+"'"+inch+'"';
+  }
+  return Math.round(userProfile.heightCm)+' cm';
+}
+function sortedWeightEntries(){
+  return weightEntries.slice().sort((a,b)=>b.timestamp-a.timestamp);
+}
+function getWeightChangeFromPrevious(){
+  const sorted = sortedWeightEntries();
+  if(sorted.length<2) return null;
+  return sorted[0].weightKg - sorted[1].weightKg;
+}
+function get7DayWeightChange(){
+  const sorted = sortedWeightEntries();
+  if(sorted.length<2) return null;
+  const latest = sorted[0];
+  const sevenDaysAgoTs = latest.timestamp - 7*24*60*60*1000;
+  // Only compare against an entry that actually spans roughly a week back — never fabricate a trend
+  // from data that doesn't cover that window.
+  const candidate = sorted.filter(e=>e.id!==latest.id && e.timestamp<=sevenDaysAgoTs)[0];
+  if(!candidate) return null;
+  return latest.weightKg - candidate.weightKg;
+}
+
+
 let savedMeals = []; // { id, name, calories, protein, carbs, fat, favorite } — tap-to-log shortcuts. Legacy meals with no "favorite" field are treated as favorites (backward-compatible).
 let editingMealId = null;   // meal id currently open for editing in Manage mode, or null
 let creatingNewMeal = false; // whether the standalone "+ New Meal" form is open
-let waterGoal = 3000; // ml
-let stepsGoal = 10000;
 let stepsEntries = []; // { id, amount, timestamp } — stored by date via timestamp, same shape as water
 let editingStepsGoal = false;
 let waterEntries = []; // { id, amount, timestamp }
@@ -2005,6 +2580,7 @@ function isSupplementScheduledToday(sup){
 let managingSupplements = false;
 let managingMeals = false;
 let libSearch = '';
+let selectedLibraryExerciseId = null; // which exercise the detail panel is showing; null = show the My Program overview
 let libMuscleFilter = 'All';
 let libEquipmentFilter = 'All';
 let showCreateCustomEx = false;
@@ -3553,14 +4129,14 @@ function renderFoodTab(){
     return acc;
   }, {calories:0, protein:0, carbs:0, fat:0});
 
-  const calPct = Math.min(100, (totals.calories/nutritionGoals.calories)*100);
-  const remaining = nutritionGoals.calories - totals.calories;
+  const calPct = Math.min(100, (totals.calories/dailyGoals.calories)*100);
+  const remaining = dailyGoals.calories - totals.calories;
   const isOver = remaining < 0;
   const comp = macroCalorieComposition(totals.protein, totals.carbs, totals.fat);
 
   // On-target status: only flags genuinely over — never shames a lower intake, which may be intentional.
-  const overThreshold = nutritionGoals.calories * 1.08;
-  const underThreshold = nutritionGoals.calories * 0.6;
+  const overThreshold = dailyGoals.calories * 1.08;
+  const underThreshold = dailyGoals.calories * 0.6;
   let statusLabel, statusClass;
   if(totals.calories===0){ statusLabel = 'NOT STARTED'; statusClass = 'neutral'; }
   else if(totals.calories > overThreshold){ statusLabel = 'OVER TARGET'; statusClass = 'warn'; }
@@ -3574,25 +4150,25 @@ function renderFoodTab(){
 
   if(editingGoals){
     html += '<div class="goals-edit-grid">'
-      + '<label>Calories<input type="number" id="goal-calories" value="'+nutritionGoals.calories+'"></label>'
-      + '<label>Protein g<input type="number" id="goal-protein" value="'+nutritionGoals.protein+'"></label>'
-      + '<label>Carbs g<input type="number" id="goal-carbs" value="'+nutritionGoals.carbs+'"></label>'
-      + '<label>Fat g<input type="number" id="goal-fat" value="'+nutritionGoals.fat+'"></label>'
+      + '<label>Calories<input type="number" id="goal-calories" value="'+dailyGoals.calories+'"></label>'
+      + '<label>Protein g<input type="number" id="goal-protein" value="'+dailyGoals.protein+'"></label>'
+      + '<label>Carbs g<input type="number" id="goal-carbs" value="'+dailyGoals.carbs+'"></label>'
+      + '<label>Fat g<input type="number" id="goal-fat" value="'+dailyGoals.fat+'"></label>'
     + '</div>';
   }else{
-    const gauge = buildCalorieGaugeSVG(totals.calories, nutritionGoals.calories);
+    const gauge = buildCalorieGaugeSVG(totals.calories, dailyGoals.calories);
 
     html += '<div class="gauge-wrap">'+gauge.svg+'</div>';
     html += '<div class="kcal-hero">'
       + '<div class="kcal-value" id="kcal-consumed-value">'+Math.round(lastDisplayedCalories!=null?lastDisplayedCalories:totals.calories).toLocaleString()+'</div>'
       + '<div class="kcal-hero-label">KCAL CONSUMED</div>'
     + '</div>';
-    html += '<div class="kcal-remaining'+(isOver?' over':'')+'">'+(isOver ? Math.abs(Math.round(remaining)).toLocaleString()+' kcal over target' : Math.round(remaining).toLocaleString()+' kcal left')+' &middot; target '+nutritionGoals.calories.toLocaleString()+'</div>';
+    html += '<div class="kcal-remaining'+(isOver?' over':'')+'">'+(isOver ? Math.abs(Math.round(remaining)).toLocaleString()+' kcal over target' : Math.round(remaining).toLocaleString()+' kcal left')+' &middot; target '+dailyGoals.calories.toLocaleString()+'</div>';
 
     html += '<div class="macro-grid">'
-      + macroBarHTML('PROTEIN', totals.protein, nutritionGoals.protein, 'var(--success)', true)
-      + macroBarHTML('CARBS', totals.carbs, nutritionGoals.carbs, 'var(--accent)', false)
-      + macroBarHTML('FAT', totals.fat, nutritionGoals.fat, 'var(--warning)', false)
+      + macroBarHTML('PROTEIN', totals.protein, dailyGoals.protein, 'var(--success)', true)
+      + macroBarHTML('CARBS', totals.carbs, dailyGoals.carbs, 'var(--accent)', false)
+      + macroBarHTML('FAT', totals.fat, dailyGoals.fat, 'var(--warning)', false)
     + '</div>';
 
     if(totals.calories>0){
@@ -3609,7 +4185,7 @@ function renderFoodTab(){
     animateNumberEl(kcalEl, fromVal, totals.calories, 550);
 
     const gaugeSvgEl = summaryEl.querySelector('.calorie-gauge');
-    const newFrac = calorieGaugeFrac(totals.calories, nutritionGoals.calories).frac;
+    const newFrac = calorieGaugeFrac(totals.calories, dailyGoals.calories).frac;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if(lastGaugeFrac==null && !reduceMotion){
@@ -3624,14 +4200,14 @@ function renderFoodTab(){
     lastDisplayedCalories = totals.calories;
 
     // Decorative rev interaction — needle blips upward on hover/tap and returns to the real value.
-    // Purely visual: never touches totals, nutritionGoals, or any saved/displayed number.
+    // Purely visual: never touches totals, dailyGoals, or any saved/displayed number.
     if(gaugeSvgEl && !reduceMotion){
       const revUp = ()=>{
-        const actual = calorieGaugeFrac(totals.calories, nutritionGoals.calories).frac;
+        const actual = calorieGaugeFrac(totals.calories, dailyGoals.calories).frac;
         animateGaugeSweep(gaugeSvgEl, actual, Math.min(1, actual+0.15), 320);
       };
       const revDown = ()=>{
-        const actual = calorieGaugeFrac(totals.calories, nutritionGoals.calories).frac;
+        const actual = calorieGaugeFrac(totals.calories, dailyGoals.calories).frac;
         animateGaugeSweep(gaugeSvgEl, Math.min(1, actual+0.15), actual, 420);
       };
       gaugeSvgEl.addEventListener('mouseenter', revUp);
@@ -3644,12 +4220,10 @@ function renderFoodTab(){
   const goalsBtn = document.getElementById('edit-goals-btn');
   if(goalsBtn) goalsBtn.onclick = ()=>{
     if(editingGoals){
-      nutritionGoals = {
-        calories: Number(document.getElementById('goal-calories').value)||nutritionGoals.calories,
-        protein: Number(document.getElementById('goal-protein').value)||nutritionGoals.protein,
-        carbs: Number(document.getElementById('goal-carbs').value)||nutritionGoals.carbs,
-        fat: Number(document.getElementById('goal-fat').value)||nutritionGoals.fat
-      };
+      dailyGoals.calories = Number(document.getElementById('goal-calories').value)||dailyGoals.calories;
+      dailyGoals.protein = Number(document.getElementById('goal-protein').value)||dailyGoals.protein;
+      dailyGoals.carbs = Number(document.getElementById('goal-carbs').value)||dailyGoals.carbs;
+      dailyGoals.fat = Number(document.getElementById('goal-fat').value)||dailyGoals.fat;
       saveFood();
     }
     editingGoals = !editingGoals;
@@ -3842,13 +4416,13 @@ function renderWaterCard(){
   const todayKey = new Date().toDateString();
   const todaysWater = waterEntries.filter(w=>fmtDateKey(w.timestamp)===todayKey);
   const totalMl = todaysWater.reduce((a,w)=>a+Number(w.amount),0);
-  const pct = Math.min(100, Math.round((totalMl/waterGoal)*100));
+  const pct = Math.min(100, Math.round((totalMl/dailyGoals.water)*100));
 
   const last7Hit = [...Array(7)].reduce((acc,_,i)=>{
     const d = new Date(); d.setDate(d.getDate()-i);
     const dKey = d.toDateString();
     const dayTotal = waterEntries.filter(w=>fmtDateKey(w.timestamp)===dKey).reduce((a,w)=>a+Number(w.amount),0);
-    return acc + (dayTotal >= waterGoal ? 1 : 0);
+    return acc + (dayTotal >= dailyGoals.water ? 1 : 0);
   },0);
 
   let html = '<div class="today-card">';
@@ -3856,10 +4430,10 @@ function renderWaterCard(){
     + '<button class="change-workout" id="edit-water-goal-btn">'+(editingWaterGoal?'Done':'Goal')+'</button></div>';
 
   if(editingWaterGoal){
-    html += '<div class="goals-edit-grid"><label>Daily goal (L)<input type="number" id="water-goal-input" value="'+(waterGoal/1000)+'" step="0.5" min="0.5"></label></div>';
+    html += '<div class="goals-edit-grid"><label>Daily goal (L)<input type="number" id="water-goal-input" value="'+(dailyGoals.water/1000)+'" step="0.5" min="0.5"></label></div>';
   }else{
     html += '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:#3AA6FF;"></div></div>';
-    html += '<div class="today-meta"><span>'+(totalMl/1000).toFixed(2)+'L / '+(waterGoal/1000).toFixed(1)+'L ('+pct+'%)</span><span>Goal hit '+last7Hit+'/7 days</span></div>';
+    html += '<div class="today-meta"><span>'+(totalMl/1000).toFixed(2)+'L / '+(dailyGoals.water/1000).toFixed(1)+'L ('+pct+'%)</span><span>Goal hit '+last7Hit+'/7 days</span></div>';
     html += '<div class="quick-serving-row">'
       + '<button type="button" class="day-pill" data-addwater="250">+250ml</button>'
       + '<button type="button" class="day-pill" data-addwater="500">+500ml</button>'
@@ -3877,7 +4451,7 @@ function renderWaterCard(){
   if(goalBtn) goalBtn.onclick = ()=>{
     if(editingWaterGoal){
       const litres = Number(document.getElementById('water-goal-input').value);
-      if(litres>0) waterGoal = Math.round(litres*1000);
+      if(litres>0) dailyGoals.water = Math.round(litres*1000);
       saveFood();
     }
     editingWaterGoal = !editingWaterGoal;
@@ -3910,17 +4484,17 @@ function renderStepsCard(){
   const todayKey = new Date().toDateString();
   const todaysSteps = stepsEntries.filter(s=>fmtDateKey(s.timestamp)===todayKey);
   const total = todaysSteps.reduce((a,s)=>a+Number(s.amount),0);
-  const pct = Math.min(100, Math.round((total/stepsGoal)*100));
-  const toGo = Math.max(0, stepsGoal-total);
+  const pct = Math.min(100, Math.round((total/dailyGoals.steps)*100));
+  const toGo = Math.max(0, dailyGoals.steps-total);
 
   let html = '<div class="today-card">';
   html += '<div class="today-top"><div><div class="today-eyebrow">Today</div><div class="today-title">\ud83d\udc5f Steps</div></div>'
     + '<button class="change-workout" id="edit-steps-goal-btn">'+(editingStepsGoal?'Done':'Goal')+'</button></div>';
 
   if(editingStepsGoal){
-    html += '<div class="goals-edit-grid"><label>Daily goal<input type="number" id="steps-goal-input" value="'+stepsGoal+'" step="500" min="1000"></label></div>';
+    html += '<div class="goals-edit-grid"><label>Daily goal<input type="number" id="steps-goal-input" value="'+dailyGoals.steps+'" step="500" min="1000"></label></div>';
   }else{
-    html += '<div class="kcal-hero" style="margin-top:0;"><div class="kcal-value" id="steps-value" style="font-size:34px;">'+Math.round(lastDisplayedSteps!=null?lastDisplayedSteps:total).toLocaleString()+'</div><div class="kcal-hero-label">/ '+stepsGoal.toLocaleString()+'</div></div>';
+    html += '<div class="kcal-hero" style="margin-top:0;"><div class="kcal-value" id="steps-value" style="font-size:34px;">'+Math.round(lastDisplayedSteps!=null?lastDisplayedSteps:total).toLocaleString()+'</div><div class="kcal-hero-label">/ '+dailyGoals.steps.toLocaleString()+'</div></div>';
     html += '<div class="progress-track" style="margin-top:8px;"><div class="progress-fill" style="width:'+pct+'%;"></div></div>';
     html += '<div class="today-meta"><span>'+pct+'%</span><span>'+toGo.toLocaleString()+' to go</span></div>';
     html += '<div class="quick-serving-row">'
@@ -3950,7 +4524,7 @@ function renderStepsCard(){
   if(goalBtn) goalBtn.onclick = ()=>{
     if(editingStepsGoal){
       const g = Number(document.getElementById('steps-goal-input').value);
-      if(g>0) stepsGoal = Math.round(g);
+      if(g>0) dailyGoals.steps = Math.round(g);
       saveFood();
     }
     editingStepsGoal = !editingStepsGoal;
@@ -4404,7 +4978,7 @@ function renderExerciseLibrary(){
       const inProgram = isInAnyProgram(ex.id);
       const bookmarked = myExercises.some(n=>n.toLowerCase()===ex.name.toLowerCase());
       const equip = ex.equipment || guessEquipment(ex.name);
-      html += '<div class="lib-card card-reveal" style="animation-delay:'+Math.min(i*25,300)+'ms" data-selectcard="'+ex.id+'">'
+      html += '<div class="lib-card card-reveal'+(selectedLibraryExerciseId===ex.id?' selected':'')+'" style="animation-delay:'+Math.min(i*25,300)+'ms" data-selectcard="'+ex.id+'">'
         + '<div class="lib-card-top"><span class="lib-card-name">'+highlightMatch(ex.name, search)+'</span>'
           + '<button type="button" class="lib-add-btn'+(bookmarked?' added':'')+'" data-libadd="'+escapeHtml(ex.name)+'">'+(bookmarked?'\u2713':'+')+'</button></div>'
         + (inProgram ? '<span class="in-program-badge in-program-badge-sm">IN PROGRAM</span>' : '')
